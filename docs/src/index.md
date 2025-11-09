@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: Bắt đầu ngay
-      link: /phase1/customer
+      link: /phase1/process
 
 features:
   - icon: ''

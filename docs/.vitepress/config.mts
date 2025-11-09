@@ -22,7 +22,7 @@ export default withMermaid(
         collapseDepth: 2,
         useTitleFromFileHeading: true,
         manualSortFileNameByPriority: [
-          'customer.md',
+          'process.md',
         ],
         useFolderTitleFromIndexFile: true,
       })
