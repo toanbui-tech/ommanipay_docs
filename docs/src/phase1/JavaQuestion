@@ -1,0 +1,4400 @@
+# Câu Hỏi Phỏng Vấn Java Thường Gặp
+
+Bộ câu hỏi toàn diện để chuẩn bị cho phỏng vấn Java của bạn.
+
+## Mục Lục
+
+- [Core Java Fundamentals](#core-java-fundamentals)
+- [Object-Oriented Programming](#object-oriented-programming)
+- [Collections Framework](#collections-framework)
+- [Exception Handling](#exception-handling)
+- [Multithreading](#multithreading)
+
+---
+
+## Core Java Fundamentals
+
+### 1. JDK, JRE, và JVM khác nhau như thế nào?
+
+**JDK (Java Development Kit):**
+- Là bộ công cụ phát triển hoàn chỉnh để phát triển ứng dụng Java
+- Bao gồm: JRE + công cụ phát triển (compiler javac, debugger, JavaDoc...)
+- Dùng cho developers
+
+**JRE (Java Runtime Environment):**
+- Môi trường để chạy các ứng dụng Java
+- Bao gồm: JVM + thư viện chuẩn Java
+- Dùng cho end-users
+
+**JVM (Java Virtual Machine):**
+- Máy ảo thực thi bytecode Java
+- Chịu trách nhiệm chuyển bytecode thành mã máy
+- Là phần core nhất
+
+**Quan hệ:** JDK ⊃ JRE ⊃ JVM
+
+```
+┌─────────────────────────────────┐
+│           JDK                   │
+│  ┌──────────────────────────┐   │
+│  │         JRE              │   │
+│  │  ┌────────────────────┐  │   │
+│  │  │       JVM          │  │   │
+│  │  └────────────────────┘  │   │
+│  │  + Java Libraries        │   │
+│  └──────────────────────────┘   │
+│  + Development Tools             │
+└─────────────────────────────────┘
+```
+
+---
+
+### 2. Tại sao Java được coi là platform-independent?
+
+Java độc lập nền tảng vì:
+
+1. **Bytecode trung gian:** Java code được compile thành bytecode (.class) thay vì mã máy
+2. **JVM cho mỗi nền tảng:** Mỗi OS có JVM riêng để chạy bytecode
+3. **"Write Once, Run Anywhere" (WORA):** Code một lần, chạy mọi nơi có JVM
+
+**Quy trình:**
+
+```
+Java Source (.java)
+        ↓
+    Compiler (javac)
+        ↓
+   Bytecode (.class)
+        ↓
+   JVM (Windows/Mac/Linux)
+        ↓
+   Machine Code
+```
+
+**Ví dụ:**
+```java
+// HelloWorld.java - Viết một lần
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
+    }
+}
+
+// Compile: javac HelloWorld.java → HelloWorld.class
+// Chạy trên bất kỳ OS nào có JVM: java HelloWorld
+```
+
+---
+
+### 3. Stack Memory vs Heap Memory
+
+| **Stack Memory** | **Heap Memory** |
+|-----------------|----------------|
+| Lưu local variables và method calls | Lưu objects và instance variables |
+| Nhỏ hơn, tốc độ truy cập nhanh | Lớn hơn, tốc độ chậm hơn |
+| LIFO (Last In First Out) | Không có thứ tự cụ thể |
+| Tự động giải phóng khi method kết thúc | Giải phóng bởi Garbage Collector |
+| Thread-safe (mỗi thread có stack riêng) | Shared giữa các threads |
+| Gây StackOverflowError nếu đầy | Gây OutOfMemoryError nếu đầy |
+
+**Ví dụ minh họa:**
+
+```java
+public class MemoryExample {
+    public void createPerson() {
+        int age = 25;              // age → Stack
+        String name = "John";      // reference → Stack, object "John" → Heap
+        Person p = new Person();   // reference p → Stack, object Person → Heap
+        
+        p.setAge(age);
+        p.setName(name);
+    } // age và p bị remove khỏi Stack, nhưng objects vẫn ở Heap
+}
+```
+
+**Visualization:**
+
+```
+Stack (Thread 1)         Heap (Shared)
+┌─────────────┐         ┌──────────────────┐
+│ age = 25    │         │                  │
+│ name = ref1 │────────→│ "John"           │
+│ p = ref2    │────────→│ Person object    │
+└─────────────┘         │   name = ref1    │
+                        │   age = 25       │
+                        └──────────────────┘
+```
+
+---
+
+### 4. Tại sao Strings immutable trong Java?
+
+**Immutable nghĩa là:** Không thể thay đổi sau khi tạo.
+
+**5 lý do chính:**
+
+#### 1. Security
+```java
+String username = "admin";
+authenticateUser(username);
+// Không ai có thể thay đổi "admin" thành "hacker"
+// sau khi method được gọi
+```
+
+#### 2. String Pool (Tiết kiệm memory)
+```java
+String s1 = "Hello";
+String s2 = "Hello";
+// s1 và s2 trỏ đến cùng object trong pool
+System.out.println(s1 == s2); // true
+```
+
+#### 3. Thread-safe
+- Không cần synchronization
+- An toàn trong môi trường multi-threaded
+
+#### 4. Hashcode caching
+- Hashcode tính một lần, dùng lại
+- Hiệu quả cho HashMap, HashSet
+
+#### 5. Class Loading
+- Class names là Strings
+- Không thể thay đổi sau khi load
+
+**Ví dụ thực tế:**
+
+```java
+String s1 = "Hello";
+String s2 = s1.concat(" World"); // Tạo String MỚI
+
+System.out.println(s1); // "Hello" - không đổi
+System.out.println(s2); // "Hello World" - object mới
+
+// Nếu muốn thay đổi, phải gán lại
+s1 = s1.concat(" World");
+System.out.println(s1); // "Hello World"
+```
+
+---
+
+### 5. String Literals vs new String()
+
+**String Literal:**
+```java
+String s1 = "Hello"; // Tạo trong String Pool
+String s2 = "Hello"; // Trỏ đến cùng object trong pool
+
+System.out.println(s1 == s2);        // true - cùng reference
+System.out.println(s1.equals(s2));   // true - cùng value
+```
+
+**new String():**
+```java
+String s3 = new String("Hello"); // Tạo object mới trong Heap
+String s4 = new String("Hello"); // Tạo object mới khác
+
+System.out.println(s3 == s4);        // false - khác reference
+System.out.println(s3.equals(s4));   // true - cùng value
+```
+
+**So sánh:**
+
+| **String Literal** | **new String()** |
+|-------------------|-----------------|
+| Lưu trong String Pool (Heap) | Lưu trong Heap (ngoài Pool) |
+| Sử dụng lại nếu đã tồn tại | Luôn tạo object mới |
+| Hiệu quả về memory | Tốn memory hơn |
+| Khuyến khích dùng | Ít dùng |
+
+**intern() method:**
+```java
+String s = new String("Hello").intern(); // Đưa vào pool
+```
+
+**Best Practice:**
+```java
+// Tốt ✓
+String name = "John";
+
+// Không tốt ✗
+String name = new String("John");
+```
+
+---
+
+## Object-Oriented Programming
+
+### 6. Abstract Class vs Interface
+
+| **Abstract Class** | **Interface** |
+|-------------------|--------------|
+| Có thể có method có implementation | Trước Java 8: chỉ abstract methods<br>Sau Java 8: có default & static methods |
+| Có thể có constructor | Không có constructor |
+| Có thể có biến instance (non-static) | Chỉ có constants (public static final) |
+| Dùng `extends`, chỉ extend 1 class | Dùng `implements`, có thể implement nhiều interface |
+| Dùng cho "is-a" relationship | Dùng cho "can-do" relationship |
+
+**Abstract Class Example:**
+```java
+abstract class Animal {
+    String name; // Instance variable
+    
+    // Constructor
+    public Animal(String name) {
+        this.name = name;
+    }
+    
+    // Abstract method
+    abstract void sound();
+    
+    // Concrete method
+    void eat() {
+        System.out.println(name + " is eating");
+    }
+}
+
+class Dog extends Animal {
+    public Dog(String name) {
+        super(name);
+    }
+    
+    @Override
+    void sound() {
+        System.out.println("Woof!");
+    }
+}
+```
+
+**Interface Example:**
+```java
+interface Flyable {
+    // Constant (public static final)
+    int MAX_SPEED = 1000;
+    
+    // Abstract method
+    void fly();
+    
+    // Default method (Java 8+)
+    default void takeOff() {
+        System.out.println("Taking off...");
+    }
+    
+    // Static method (Java 8+)
+    static void info() {
+        System.out.println("This is a Flyable interface");
+    }
+}
+
+class Bird implements Flyable {
+    @Override
+    public void fly() {
+        System.out.println("Bird is flying");
+    }
+}
+```
+
+**Multiple Interface Implementation:**
+```java
+interface Swimmable {
+    void swim();
+}
+
+class Duck implements Flyable, Swimmable {
+    @Override
+    public void fly() {
+        System.out.println("Duck flying");
+    }
+    
+    @Override
+    public void swim() {
+        System.out.println("Duck swimming");
+    }
+}
+```
+
+**Khi nào dùng:**
+- **Abstract class:** Khi các class con có chung base implementation
+- **Interface:** Khi muốn định nghĩa contract mà nhiều class không liên quan có thể implement
+
+---
+
+### 7. final, finally, và finalize
+
+#### `final` Keyword
+
+**1. final Variable (Constant):**
+```java
+final int MAX_SIZE = 100;
+// MAX_SIZE = 200; // Compile error!
+
+final List<String> list = new ArrayList<>();
+list.add("Hello"); // OK - có thể modify object
+// list = new ArrayList<>(); // Compile error - không thể reassign
+```
+
+**2. final Method (Không thể override):**
+```java
+class Parent {
+    final void display() {
+        System.out.println("Parent");
+    }
+}
+
+class Child extends Parent {
+    // @Override
+    // void display() { } // Compile error!
+}
+```
+
+**3. final Class (Không thể kế thừa):**
+```java
+final class ImmutableClass {
+    // implementation
+}
+
+// class SubClass extends ImmutableClass { } // Compile error!
+
+// Example: String, Integer, Math là final classes
+```
+
+#### `finally` Block
+
+**Mục đích:** Cleanup code luôn được thực thi.
+
+```java
+Connection conn = null;
+try {
+    conn = DriverManager.getConnection("jdbc:...");
+    // Database operations
+} catch (SQLException e) {
+    System.err.println("Error: " + e.getMessage());
+} finally {
+    // Luôn chạy - đóng connection
+    if (conn != null) {
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+**finally chạy kể cả khi có return:**
+```java
+public int test() {
+    try {
+        return 1;
+    } finally {
+        System.out.println("Finally executed"); // Vẫn chạy!
+    }
+}
+```
+
+#### `finalize()` Method
+
+**⚠️ Deprecated từ Java 9**
+
+```java
+@Override
+protected void finalize() throws Throwable {
+    try {
+        // Cleanup code
+        System.out.println("Finalize called");
+    } finally {
+        super.finalize();
+    }
+}
+```
+
+**Thay thế:** Dùng try-with-resources hoặc `AutoCloseable`
+
+```java
+class Resource implements AutoCloseable {
+    @Override
+    public void close() {
+        System.out.println("Resource closed");
+    }
+}
+
+try (Resource r = new Resource()) {
+    // Use resource
+} // Tự động close
+```
+
+**Tóm tắt:**
+- **final:** Constant, prevent override/inheritance
+- **finally:** Cleanup code
+- **finalize():** Deprecated, dùng AutoCloseable
+
+---
+
+### 8. Method Overloading vs Method Overriding
+
+#### Method Overloading (Compile-time Polymorphism)
+
+**Đặc điểm:**
+- Cùng tên method, khác parameters
+- Trong cùng một class
+- Return type có thể khác
+- Compile-time binding
+
+```java
+class Calculator {
+    // Khác số parameters
+    int add(int a, int b) {
+        return a + b;
+    }
+    
+    int add(int a, int b, int c) {
+        return a + b + c;
+    }
+    
+    // Khác kiểu parameters
+    double add(double a, double b) {
+        return a + b;
+    }
+    
+    // Khác thứ tự parameters
+    String add(String a, int b) {
+        return a + b;
+    }
+    
+    String add(int a, String b) {
+        return a + b;
+    }
+}
+
+// Sử dụng
+Calculator calc = new Calculator();
+System.out.println(calc.add(5, 10));           // 15
+System.out.println(calc.add(5, 10, 15));       // 30
+System.out.println(calc.add(5.5, 10.5));       // 16.0
+System.out.println(calc.add("Result: ", 100)); // "Result: 100"
+```
+
+**Lưu ý:** Chỉ thay đổi return type KHÔNG phải overloading!
+
+```java
+// Compile error! Không thể overload
+int getValue() { return 0; }
+double getValue() { return 0.0; } // ERROR!
+```
+
+#### Method Overriding (Runtime Polymorphism)
+
+**Đặc điểm:**
+- Subclass định nghĩa lại method của superclass
+- Cùng signature (tên, parameters)
+- Return type giống hoặc covariant (subtype)
+- Runtime binding
+
+```java
+class Animal {
+    void sound() {
+        System.out.println("Animal makes sound");
+    }
+    
+    Animal getAnimal() {
+        return new Animal();
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    void sound() {
+        System.out.println("Woof!");
+    }
+    
+    // Covariant return type
+    @Override
+    Dog getAnimal() { // Dog is subtype of Animal
+        return new Dog();
+    }
+}
+
+// Sử dụng - Runtime polymorphism
+Animal animal = new Dog();
+animal.sound(); // "Woof!" - gọi Dog's method
+```
+
+**Rules cho Overriding:**
+
+1. **Access modifier:** Không thể restrictive hơn
+```java
+class Parent {
+    protected void method() { }
+}
+
+class Child extends Parent {
+    @Override
+    public void method() { } // OK - less restrictive
+    
+    // private void method() { } // ERROR - more restrictive
+}
+```
+
+2. **Exception:** Không thể throw broader checked exception
+```java
+class Parent {
+    void method() throws IOException { }
+}
+
+class Child extends Parent {
+    @Override
+    void method() throws FileNotFoundException { } // OK - narrower
+    
+    // void method() throws Exception { } // ERROR - broader
+}
+```
+
+3. **final method:** Không thể override
+4. **static method:** Không thể override (chỉ hide)
+
+**So sánh:**
+
+| Aspect | Overloading | Overriding |
+|--------|------------|-----------|
+| Mục đích | Nhiều cách gọi cùng method | Subclass customize behavior |
+| Compile/Runtime | Compile-time | Runtime |
+| Scope | Cùng class | Subclass |
+| Parameters | Phải khác | Phải giống |
+| Return type | Có thể khác | Giống hoặc covariant |
+| Inheritance | Không cần | Cần |
+
+---
+
+### 9. Access Modifiers
+
+**4 loại access modifiers:**
+
+| Modifier | Same Class | Same Package | Subclass | Other Package |
+|----------|-----------|-------------|----------|---------------|
+| `private` | ✓ | ✗ | ✗ | ✗ |
+| `default` | ✓ | ✓ | ✗ | ✗ |
+| `protected` | ✓ | ✓ | ✓ | ✗ |
+| `public` | ✓ | ✓ | ✓ | ✓ |
+
+**Ví dụ chi tiết:**
+
+```java
+// File: Person.java
+package com.example;
+
+public class Person {
+    private int id;              // Chỉ trong Person class
+    String name;                 // default - trong package com.example
+    protected int age;           // trong package + subclasses
+    public String address;       // Mọi nơi
+    
+    private void privateMethod() {
+        System.out.println("Private");
+    }
+    
+    void defaultMethod() {
+        System.out.println("Default");
+    }
+    
+    protected void protectedMethod() {
+        System.out.println("Protected");
+    }
+    
+    public void publicMethod() {
+        System.out.println("Public");
+    }
+}
+```
+
+**Same Package:**
+```java
+// File: TestSamePackage.java
+package com.example;
+
+public class TestSamePackage {
+    void test() {
+        Person p = new Person();
+        // p.id - ERROR (private)
+        p.name = "John";        // OK (default)
+        p.age = 25;             // OK (protected)
+        p.address = "123 St";   // OK (public)
+        
+        // p.privateMethod();   // ERROR
+        p.defaultMethod();      // OK
+        p.protectedMethod();    // OK
+        p.publicMethod();       // OK
+    }
+}
+```
+
+**Subclass (Different Package):**
+```java
+// File: Employee.java
+package com.company;
+
+import com.example.Person;
+
+public class Employee extends Person {
+    void test() {
+        // id - ERROR (private)
+        // name - ERROR (default, khác package)
+        age = 30;               // OK (protected, subclass)
+        address = "456 St";     // OK (public)
+        
+        // privateMethod();     // ERROR
+        // defaultMethod();     // ERROR
+        protectedMethod();      // OK
+        publicMethod();         // OK
+    }
+}
+```
+
+**Different Package (Not Subclass):**
+```java
+// File: Test.java
+package com.other;
+
+import com.example.Person;
+
+public class Test {
+    void test() {
+        Person p = new Person();
+        // p.id - ERROR
+        // p.name - ERROR
+        // p.age - ERROR
+        p.address = "789 St";   // OK (public only)
+        
+        // Chỉ public method
+        p.publicMethod();
+    }
+}
+```
+
+**Best Practices:**
+
+1. **Principle of Least Privilege:** Dùng restrictive nhất có thể
+2. **private:** Mặc định cho fields
+3. **protected:** Cho methods muốn subclass override
+4. **public:** Chỉ cho API methods
+5. **default:** Hiếm dùng, cho package-private utilities
+
+---
+
+### 10. Composition vs Inheritance
+
+#### Inheritance (is-a relationship)
+
+```java
+// Animal IS-A LivingBeing
+class LivingBeing {
+    void breathe() {
+        System.out.println("Breathing...");
+    }
+}
+
+class Animal extends LivingBeing {
+    void eat() {
+        System.out.println("Eating...");
+    }
+}
+
+class Dog extends Animal {
+    void bark() {
+        System.out.println("Woof!");
+    }
+}
+
+// Sử dụng
+Dog dog = new Dog();
+dog.breathe(); // Từ LivingBeing
+dog.eat();     // Từ Animal
+dog.bark();    // Của Dog
+```
+
+**Ưu điểm:**
+- Code reuse
+- Polymorphism
+
+**Nhược điểm:**
+- Tight coupling
+- Rigid hierarchy
+- Fragile base class problem
+
+#### Composition (has-a relationship)
+
+```java
+// Car HAS-A Engine
+class Engine {
+    private String type;
+    
+    public Engine(String type) {
+        this.type = type;
+    }
+    
+    void start() {
+        System.out.println(type + " engine starting...");
+    }
+}
+
+class Transmission {
+    private String type;
+    
+    public Transmission(String type) {
+        this.type = type;
+    }
+    
+    void shift(int gear) {
+        System.out.println("Shifting to gear " + gear);
+    }
+}
+
+class Car {
+    private Engine engine;           // HAS-A
+    private Transmission transmission; // HAS-A
+    private String model;
+    
+    public Car(String model, String engineType, String transType) {
+        this.model = model;
+        this.engine = new Engine(engineType);
+        this.transmission = new Transmission(transType);
+    }
+    
+    void start() {
+        engine.start();
+        System.out.println(model + " is ready to drive");
+    }
+    
+    void drive() {
+        transmission.shift(1);
+        System.out.println("Driving...");
+    }
+    
+    // Có thể thay engine dễ dàng
+    void changeEngine(Engine newEngine) {
+        this.engine = newEngine;
+    }
+}
+
+// Sử dụng
+Car car = new Car("Tesla Model 3", "Electric", "Automatic");
+car.start();
+car.drive();
+```
+
+**Ưu điểm:**
+- Loose coupling
+- Flexibility - dễ thay đổi components
+- Dễ test (mock components)
+- Avoid deep hierarchies
+
+**Khi nào dùng:**
+
+| Dùng Inheritance khi: | Dùng Composition khi: |
+|---------------------|---------------------|
+| Có mối quan hệ "is-a" rõ ràng | Có mối quan hệ "has-a" |
+| Cần polymorphism | Cần flexibility |
+| Hierarchy ổn định | Components có thể thay đổi |
+| Behavior được share | Behavior có thể tái sử dụng |
+
+**Best Practice: "Favor Composition Over Inheritance"**
+
+```java
+// Thay vì inheritance hierarchy phức tạp
+class FlyingDog extends Dog, Flying { } // Không được trong Java!
+
+// Dùng composition
+interface Flyable {
+    void fly();
+}
+
+class FlyingAbility implements Flyable {
+    @Override
+    public void fly() {
+        System.out.println("Flying...");
+    }
+}
+
+class Dog {
+    private Flyable flyingAbility; // Composition
+    
+    public Dog(Flyable flyingAbility) {
+        this.flyingAbility = flyingAbility;
+    }
+    
+    void fly() {
+        if (flyingAbility != null) {
+            flyingAbility.fly();
+        }
+    }
+}
+
+// Sử dụng
+Dog superDog = new Dog(new FlyingAbility());
+superDog.fly(); // This dog can fly!
+
+Dog normalDog = new Dog(null);
+// normalDog.fly(); // This dog cannot fly
+```
+
+---
+
+### 11. Constructor Overloading
+
+**Định nghĩa:** Có nhiều constructors trong cùng class với khác parameters.
+
+```java
+class Person {
+    private String name;
+    private int age;
+    private String email;
+    
+    // Constructor 1 - No arguments
+    public Person() {
+        this.name = "Unknown";
+        this.age = 0;
+        this.email = "not@provided.com";
+        System.out.println("Default constructor called");
+    }
+    
+    // Constructor 2 - Name only
+    public Person(String name) {
+        this.name = name;
+        this.age = 0;
+        this.email = "not@provided.com";
+        System.out.println("Constructor with name called");
+    }
+    
+    // Constructor 3 - Name and age
+    public Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+        this.email = "not@provided.com";
+        System.out.println("Constructor with name and age called");
+    }
+    
+    // Constructor 4 - All parameters
+    public Person(String name, int age, String email) {
+        this.name = name;
+        this.age = age;
+        this.email = email;
+        System.out.println("Constructor with all parameters called");
+    }
+    
+    void display() {
+        System.out.println("Name: " + name + ", Age: " + age + ", Email: " + email);
+    }
+}
+
+// Sử dụng
+Person p1 = new Person();
+p1.display();
+// Output: Default constructor called
+//         Name: Unknown, Age: 0, Email: not@provided.com
+
+Person p2 = new Person("John");
+p2.display();
+// Output: Constructor with name called
+//         Name: John, Age: 0, Email: not@provided.com
+
+Person p3 = new Person("Jane", 25);
+p3.display();
+// Output: Constructor with name and age called
+//         Name: Jane, Age: 25, Email: not@provided.com
+
+Person p4 = new Person("Bob", 30, "bob@email.com");
+p4.display();
+// Output: Constructor with all parameters called
+//         Name: Bob, Age: 30, Email: bob@email.com
+```
+
+**Constructor Chaining với `this()`:**
+
+```java
+class Person {
+    private String name;
+    private int age;
+    private String email;
+    
+    // Main constructor
+    public Person(String name, int age, String email) {
+        this.name = name;
+        this.age = age;
+        this.email = email;
+    }
+    
+    // Delegate to main constructor
+    public Person(String name, int age) {
+        this(name, age, "not@provided.com");
+    }
+    
+    public Person(String name) {
+        this(name, 0);
+    }
+    
+    public Person() {
+        this("Unknown");
+    }
+}
+```
+
+**Best Practices:**
+1. Tránh duplicate code bằng constructor chaining
+2. Validate parameters trong main constructor
+3. Đặt default values hợp lý
+
+---
+
+### 12. Keyword `super`
+
+**Mục đích:**
+1. Gọi constructor của superclass
+2. Truy cập members (fields/methods) của superclass
+
+#### 1. super() - Gọi Constructor
+
+```java
+class Animal {
+    String species;
+    
+    Animal(String species) {
+        this.species = species;
+        System.out.println("Animal constructor: " + species);
+    }
+}
+
+class Dog extends Animal {
+    String breed;
+    
+    Dog(String species, String breed) {
+        super(species); // Phải là statement đầu tiên!
+        this.breed = breed;
+        System.out.println("Dog constructor: " + breed);
+    }
+}
+
+// Sử dụng
+Dog dog = new Dog("Canine", "Golden Retriever");
+// Output:
+// Animal constructor: Canine
+// Dog constructor: Golden Retriever
+```
+
+#### 2. super.field - Truy cập Field
+
+```java
+class Parent {
+    String name = "Parent";
+}
+
+class Child extends Parent {
+    String name = "Child";
+    
+    void display() {
+        System.out.println("Child name: " + name);
+        System.out.println("Parent name: " + super.name);
+        System.out.println("This name: " + this.name);
+    }
+}
+
+// Sử dụng
+Child child = new Child();
+child.display();
+// Output:
+// Child name: Child
+// Parent name: Parent
+// This name: Child
+```
+
+#### 3. super.method() - Gọi Method
+
+```java
+class Animal {
+    void eat() {
+        System.out.println("Animal is eating");
+    }
+    
+    void sleep() {
+        System.out.println("Animal is sleeping");
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    void eat() {
+        super.eat(); // Gọi implementation của Parent
+        System.out.println("Dog is eating bones");
+    }
+    
+    void showBehavior() {
+        eat();        // Gọi Dog's eat()
+        super.eat();  // Gọi Animal's eat()
+        sleep();      // Gọi inherited sleep()
+    }
+}
+
+// Sử dụng
+Dog dog = new Dog();
+dog.eat();
+// Output:
+// Animal is eating
+// Dog is eating bones
+
+dog.showBehavior();
+// Output:
+// Animal is eating
+// Dog is eating bones
+// Animal is eating
+// Animal is sleeping
+```
+
+**Lưu ý quan trọng:**
+
+1. **super() phải là statement đầu tiên:**
+```java
+Dog(String species, String breed) {
+    this.breed = breed;  // ERROR nếu đặt trước super()
+    super(species);      // Compile error!
+}
+```
+
+2. **super() hoặc this() - chọn một:**
+```java
+class Dog extends Animal {
+    Dog() {
+        super("Canine"); // OK
+    }
+    
+    Dog(String breed) {
+        this();          // OK - gọi constructor khác
+        // super("Canine"); // ERROR - không thể có cả 2
+    }
+}
+```
+
+3. **Không thể dùng super trong static context:**
+```java
+class Child extends Parent {
+    static void staticMethod() {
+        // super.someMethod(); // ERROR!
+    }
+}
+```
+
+---
+
+### 13. Keyword `this`
+
+**Mục đích:**
+1. Phân biệt instance variable và parameter cùng tên
+2. Gọi constructor khác trong cùng class (constructor chaining)
+3. Trả về instance hiện tại
+4. Pass instance hiện tại làm parameter
+
+#### 1. Phân biệt Instance Variable và Parameter
+
+```java
+class Person {
+    private String name;
+    private int age;
+    
+    // Không dùng this - confusing!
+    public Person(String n, int a) {
+        name = n;
+        age = a;
+    }
+    
+    // Dùng this - clear!
+    public Person(String name, int age) {
+        this.name = name; // this.name = instance variable
+        this.age = age;   // name = parameter
+    }
+    
+    void setName(String name) {
+        this.name = name; // Phân biệt rõ ràng
+    }
+}
+```
+
+#### 2. Constructor Chaining
+
+```java
+class Rectangle {
+    private int width;
+    private int height;
+    private String color;
+    
+    // Main constructor
+    public Rectangle(int width, int height, String color) {
+        this.width = width;
+        this.height = height;
+        this.color = color;
+    }
+    
+    // Delegate to main constructor
+    public Rectangle(int width, int height) {
+        this(width, height, "white"); // Gọi constructor trên
+    }
+    
+    public Rectangle(int side) {
+        this(side, side); // Square
+    }
+    
+    public Rectangle() {
+        this(10); // Default size
+    }
+}
+
+// Sử dụng
+Rectangle r1 = new Rectangle();              // 10x10, white
+Rectangle r2 = new Rectangle(5);             // 5x5, white
+Rectangle r3 = new Rectangle(10, 20);        // 10x20, white
+Rectangle r4 = new Rectangle(10, 20, "red"); // 10x20, red
+```
+
+#### 3. Return Current Instance (Method Chaining)
+
+```java
+class Builder {
+    private String name;
+    private int age;
+    
+    Builder setName(String name) {
+        this.name = name;
+        return this; // Return current instance
+    }
+    
+    Builder setAge(int age) {
+        this.age = age;
+        return this;
+    }
+    
+    void build() {
+        System.out.println("Name: " + name + ", Age: " + age);
+    }
+}
+
+// Method chaining
+Builder builder = new Builder()
+    .setName("John")
+    .setAge(25);
+builder.build();
+```
+
+#### 4. Pass Current Instance
+
+```java
+class Student {
+    String name;
+    
+    Student(String name) {
+        this.name = name;
+    }
+    
+    void register() {
+        Database db = new Database();
+        db.save(this); // Pass current instance
+    }
+}
+
+class Database {
+    void save(Student student) {
+        System.out.println("Saving: " + student.name);
+    }
+}
+```
+
+**this vs super:**
+
+| **this** | **super** |
+|---------|----------|
+| Reference đến current object | Reference đến parent object |
+| Gọi constructor của current class | Gọi constructor của parent class |
+| Truy cập members của current class | Truy cập members của parent class |
+
+---
+
+### 14. Static Blocks
+
+**Mục đích:**
+- Khởi tạo static variables
+- Thực thi code trước khi class được sử dụng
+- Chạy một lần duy nhất khi class được load vào memory
+
+```java
+class Database {
+    static Connection connection;
+    static String url;
+    static int connectionCount = 0;
+    
+    // Static block 1
+    static {
+        System.out.println("Static block 1: Initializing configuration");
+        url = "jdbc:mysql://localhost:3306/mydb";
+    }
+    
+    // Static block 2
+    static {
+        System.out.println("Static block 2: Establishing connection");
+        try {
+            connection = DriverManager.getConnection(url);
+            connectionCount++;
+            System.out.println("Connection established");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Constructor
+    public Database() {
+        System.out.println("Constructor called");
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("Main method started");
+        Database db1 = new Database();
+        Database db2 = new Database();
+    }
+}
+```
+
+**Output:**
+```
+Static block 1: Initializing configuration
+Static block 2: Establishing connection
+Connection established
+Main method started
+Constructor called
+Constructor called
+```
+
+**Thứ tự thực thi:**
+
+```java
+class InitializationOrder {
+    // 1. Static variables
+    static int staticVar = initStatic();
+    
+    // 2. Static block
+    static {
+        System.out.println("2. Static block");
+    }
+    
+    // 3. Instance variables
+    int instanceVar = initInstance();
+    
+    // 4. Instance block
+    {
+        System.out.println("4. Instance block");
+    }
+    
+    // 5. Constructor
+    public InitializationOrder() {
+        System.out.println("5. Constructor");
+    }
+    
+    static int initStatic() {
+        System.out.println("1. Static variable initialization");
+        return 10;
+    }
+    
+    int initInstance() {
+        System.out.println("3. Instance variable initialization");
+        return 20;
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("=== Creating first object ===");
+        new InitializationOrder();
+        
+        System.out.println("\n=== Creating second object ===");
+        new InitializationOrder();
+    }
+}
+```
+
+**Output:**
+```
+1. Static variable initialization
+2. Static block
+=== Creating first object ===
+3. Instance variable initialization
+4. Instance block
+5. Constructor
+
+=== Creating second object ===
+3. Instance variable initialization
+4. Instance block
+5. Constructor
+```
+
+**Use Cases:**
+- Load configuration files
+- Initialize database connections
+- Register drivers
+- Complex static variable initialization
+
+---
+
+### 15. OOP Features trong Java
+
+Java hỗ trợ 4 tính chất OOP chính:
+
+#### 1. Encapsulation (Đóng gói)
+
+**Định nghĩa:** Che giấu data, chỉ expose qua methods.
+
+```java
+class BankAccount {
+    // Private fields - ẩn data
+    private String accountNumber;
+    private double balance;
+    private String pin;
+    
+    // Public constructor
+    public BankAccount(String accountNumber, String pin) {
+        this.accountNumber = accountNumber;
+        this.pin = pin;
+        this.balance = 0.0;
+    }
+    
+    // Public methods - controlled access
+    public void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            System.out.println("Deposited: " + amount);
+        }
+    }
+    
+    public boolean withdraw(double amount, String enteredPin) {
+        if (!pin.equals(enteredPin)) {
+            System.out.println("Invalid PIN");
+            return false;
+        }
+        
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            System.out.println("Withdrawn: " + amount);
+            return true;
+        }
+        
+        System.out.println("Insufficient balance");
+        return false;
+    }
+    
+    public double getBalance(String enteredPin) {
+        if (pin.equals(enteredPin)) {
+            return balance;
+        }
+        return -1; // Invalid PIN
+    }
+    
+    // Không có setter cho accountNumber và pin - immutable
+}
+
+// Sử dụng
+BankAccount account = new BankAccount("12345", "1234");
+account.deposit(1000);
+// account.balance = 5000; // ERROR - không truy cập được
+account.withdraw(500, "1234");
+```
+
+**Lợi ích:**
+- Data hiding và security
+- Flexibility - thay đổi implementation không ảnh hưởng client code
+- Validation - kiểm soát thông qua methods
+- Maintainability
+
+#### 2. Inheritance (Kế thừa)
+
+**Định nghĩa:** Class con kế thừa properties/methods của class cha.
+
+```java
+// Superclass
+class Vehicle {
+    protected String brand;
+    protected int year;
+    
+    public Vehicle(String brand, int year) {
+        this.brand = brand;
+        this.year = year;
+    }
+    
+    void start() {
+        System.out.println(brand + " is starting");
+    }
+    
+    void stop() {
+        System.out.println(brand + " is stopping");
+    }
+}
+
+// Subclass
+class Car extends Vehicle {
+    private int numberOfDoors;
+    
+    public Car(String brand, int year, int doors) {
+        super(brand, year); // Kế thừa từ Vehicle
+        this.numberOfDoors = doors;
+    }
+    
+    // Thêm method mới
+    void openTrunk() {
+        System.out.println("Trunk opened");
+    }
+    
+    // Override method
+    @Override
+    void start() {
+        System.out.println("Car " + brand + " engine started");
+    }
+}
+
+// Sử dụng
+Car car = new Car("Toyota", 2023, 4);
+car.start();      // Car Toyota engine started
+car.stop();       // Toyota is stopping (inherited)
+car.openTrunk();  // Trunk opened
+```
+
+**Lợi ích:**
+- Code reusability
+- Method overriding
+- Polymorphism
+
+#### 3. Polymorphism (Đa hình)
+
+**Định nghĩa:** Một interface, nhiều implementations.
+
+**Compile-time Polymorphism (Overloading):**
+```java
+class Printer {
+    void print(String text) {
+        System.out.println("Printing text: " + text);
+    }
+    
+    void print(int number) {
+        System.out.println("Printing number: " + number);
+    }
+    
+    void print(String text, int copies) {
+        for (int i = 0; i < copies; i++) {
+            System.out.println(text);
+        }
+    }
+}
+```
+
+**Runtime Polymorphism (Overriding):**
+```java
+class Animal {
+    void makeSound() {
+        System.out.println("Animal sound");
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    void makeSound() {
+        System.out.println("Woof!");
+    }
+}
+
+class Cat extends Animal {
+    @Override
+    void makeSound() {
+        System.out.println("Meow!");
+    }
+}
+
+// Polymorphism in action
+Animal[] animals = {new Dog(), new Cat(), new Animal()};
+for (Animal animal : animals) {
+    animal.makeSound(); // Gọi đúng method based on object type
+}
+// Output:
+// Woof!
+// Meow!
+// Animal sound
+```
+
+**Lợi ích:**
+- Flexibility
+- Maintainability
+- Extensibility
+
+#### 4. Abstraction (Trừu tượng)
+
+**Định nghĩa:** Ẩn implementation details, chỉ hiện functionalities.
+
+```java
+// Abstract class
+abstract class PaymentMethod {
+    protected double amount;
+    
+    public PaymentMethod(double amount) {
+        this.amount = amount;
+    }
+    
+    // Abstract method - must implement
+    abstract void processPayment();
+    
+    // Concrete method - shared logic
+    void printReceipt() {
+        System.out.println("Payment of $" + amount + " processed");
+    }
+}
+
+class CreditCard extends PaymentMethod {
+    private String cardNumber;
+    
+    public CreditCard(double amount, String cardNumber) {
+        super(amount);
+        this.cardNumber = cardNumber;
+    }
+    
+    @Override
+    void processPayment() {
+        System.out.println("Processing credit card payment");
+        System.out.println("Card: ****" + cardNumber.substring(12));
+        // Credit card specific logic
+    }
+}
+
+class PayPal extends PaymentMethod {
+    private String email;
+    
+    public PayPal(double amount, String email) {
+        super(amount);
+        this.email = email;
+    }
+    
+    @Override
+    void processPayment() {
+        System.out.println("Processing PayPal payment");
+        System.out.println("Email: " + email);
+        // PayPal specific logic
+    }
+}
+
+// Sử dụng
+PaymentMethod payment1 = new CreditCard(100.0, "1234567890123456");
+payment1.processPayment();
+payment1.printReceipt();
+
+PaymentMethod payment2 = new PayPal(50.0, "user@email.com");
+payment2.processPayment();
+payment2.printReceipt();
+```
+
+**Lợi ích:**
+- Reduce complexity
+- Avoid code duplication
+- Easy maintenance
+
+---
+
+### 16. Diamond Problem và Solution
+
+**Diamond Problem:** Xảy ra khi một class kế thừa từ 2 classes có cùng method.
+
+```
+      A
+     / \
+    B   C
+     \ /
+      D
+```
+
+**Trong Java:**
+
+#### Multiple Inheritance của Classes: KHÔNG được phép
+
+```java
+class A {
+    void display() {
+        System.out.println("A");
+    }
+}
+
+class B extends A {
+    void display() {
+        System.out.println("B");
+    }
+}
+
+class C extends A {
+    void display() {
+        System.out.println("C");
+    }
+}
+
+// class D extends B, C { } // COMPILE ERROR!
+// Java không cho phép multiple inheritance của classes
+```
+
+#### Multiple Inheritance của Interfaces: Được phép
+
+**Vấn đề với Default Methods (Java 8+):**
+
+```java
+interface InterfaceA {
+    default void show() {
+        System.out.println("Interface A");
+    }
+}
+
+interface InterfaceB {
+    default void show() {
+        System.out.println("Interface B");
+    }
+}
+
+// Compile error nếu không resolve conflict!
+class MyClass implements InterfaceA, InterfaceB {
+    // Phải override để resolve
+    @Override
+    public void show() {
+        // Solution 1: Gọi specific interface
+        InterfaceA.super.show();
+        
+        // Solution 2: Gọi cả 2
+        // InterfaceA.super.show();
+        // InterfaceB.super.show();
+        
+        // Solution 3: Custom implementation
+        // System.out.println("MyClass implementation");
+    }
+}
+```
+
+**Ví dụ chi tiết:**
+
+```java
+interface Flyable {
+    default void move() {
+        System.out.println("Flying in the sky");
+    }
+}
+
+interface Swimmable {
+    default void move() {
+        System.out.println("Swimming in water");
+    }
+}
+
+class Duck implements Flyable, Swimmable {
+    @Override
+    public void move() {
+        System.out.println("Duck's custom move:");
+        Flyable.super.move();    // Gọi Flyable's implementation
+        Swimmable.super.move();  // Gọi Swimmable's implementation
+    }
+}
+
+// Sử dụng
+Duck duck = new Duck();
+duck.move();
+// Output:
+// Duck's custom move:
+// Flying in the sky
+// Swimming in water
+```
+
+**Rules để resolve:**
+
+1. **Class wins:** Class method > Interface default method
+```java
+class Parent {
+    public void show() {
+        System.out.println("Parent");
+    }
+}
+
+interface MyInterface {
+    default void show() {
+        System.out.println("Interface");
+    }
+}
+
+class Child extends Parent implements MyInterface {
+    // Không cần override, Parent's method được dùng
+}
+
+Child c = new Child();
+c.show(); // "Parent"
+```
+
+2. **Most specific wins:** Sub-interface > Super-interface
+```java
+interface A {
+    default void show() { System.out.println("A"); }
+}
+
+interface B extends A {
+    default void show() { System.out.println("B"); }
+}
+
+class MyClass implements A, B {
+    // B's implementation được dùng (more specific)
+}
+```
+
+3. **Otherwise:** Phải override explicitly
+
+---
+
+### 17. Marker Interface
+
+**Định nghĩa:** Interface không có methods/fields, chỉ để "đánh dấu" class.
+
+**Mục đích:** Cung cấp metadata cho JVM/compiler về class behavior.
+
+**Ví dụ trong Java:**
+
+#### 1. Serializable
+```java
+import java.io.*;
+
+// Marker interface - không có methods
+class Person implements Serializable {
+    private String name;
+    private int age;
+    
+    public Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+}
+
+// Serialize
+try (ObjectOutputStream oos = new ObjectOutputStream(
+        new FileOutputStream("person.dat"))) {
+    Person person = new Person("John", 25);
+    oos.writeObject(person);
+}
+
+// Deserialize
+try (ObjectInputStream ois = new ObjectInputStream(
+        new FileInputStream("person.dat"))) {
+    Person person = (Person) ois.readObject();
+}
+```
+
+#### 2. Cloneable
+```java
+class Student implements Cloneable {
+    private String name;
+    private int rollNo;
+    
+    public Student(String name, int rollNo) {
+        this.name = name;
+        this.rollNo = rollNo;
+    }
+    
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+}
+
+// Sử dụng
+Student s1 = new Student("John", 101);
+Student s2 = (Student) s1.clone(); // Clone được vì implements Cloneable
+```
+
+#### 3. Remote (RMI)
+```java
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+interface MyRemoteService extends Remote {
+    String sayHello() throws RemoteException;
+}
+```
+
+**Custom Marker Interface:**
+
+```java
+// Define marker
+interface Premium {
+    // No methods
+}
+
+class User implements Premium {
+    private String name;
+    
+    public User(String name) {
+        this.name = name;
+    }
+    
+    public String getName() {
+        return name;
+    }
+}
+
+// Check marker
+class Service {
+    void processUser(User user) {
+        if (user instanceof Premium) {
+            System.out.println("Premium user: " + user.getName());
+            // Provide premium features
+        } else {
+            System.out.println("Regular user: " + user.getName());
+        }
+    }
+}
+```
+
+**Modern Alternative: Annotations**
+
+```java
+// Thay vì marker interface
+@Retention(RetentionPolicy.RUNTIME)
+@interface Premium {
+}
+
+@Premium
+class User {
+    private String name;
+    // ...
+}
+
+// Check annotation
+if (user.getClass().isAnnotationPresent(Premium.class)) {
+    // Premium user logic
+}
+```
+
+---
+
+## Collections Framework
+
+### 18. Collections Framework Overview
+
+**Định nghĩa:** Tập hợp các interfaces và classes để lưu trữ và thao tác nhóm objects.
+
+**Core Interfaces Hierarchy:**
+
+```
+Collection (interface)
+├── List (interface) - Ordered, duplicates allowed
+│   ├── ArrayList - Dynamic array
+│   ├── LinkedList - Doubly linked list
+│   ├── Vector - Synchronized ArrayList
+│   └── Stack - LIFO
+│
+├── Set (interface) - No duplicates
+│   ├── HashSet - Hash table, no order
+│   ├── LinkedHashSet - Maintains insertion order
+│   └── TreeSet - Sorted (Red-Black tree)
+│
+└── Queue (interface) - FIFO
+    ├── PriorityQueue - Heap-based
+    ├── LinkedList - Also implements Queue
+    └── Deque (interface)
+        ├── ArrayDeque
+        └── LinkedList
+
+Map (interface) - Key-value pairs (NOT part of Collection)
+├── HashMap - Hash table
+├── LinkedHashMap - Maintains insertion order
+├── TreeMap - Sorted by keys
+├── Hashtable - Synchronized, legacy
+└── WeakHashMap - Weak references
+```
+
+**Ví dụ từng loại:**
+
+```java
+// List - ordered, duplicates OK
+List<String> arrayList = new ArrayList<>();
+arrayList.add("A");
+arrayList.add("B");
+arrayList.add("A"); // Duplicate OK
+System.out.println(arrayList); // [A, B, A]
+
+// Set - no duplicates
+Set<String> hashSet = new HashSet<>();
+hashSet.add("A");
+hashSet.add("B");
+hashSet.add("A"); // Ignored
+System.out.println(hashSet); // [A, B] (order not guaranteed)
+
+// Map - key-value
+Map<String, Integer> hashMap = new HashMap<>();
+hashMap.put("John", 25);
+hashMap.put("Jane", 30);
+System.out.println(hashMap); // {John=25, Jane=30}
+
+// Queue - FIFO
+Queue<String> queue = new LinkedList<>();
+queue.offer("First");
+queue.offer("Second");
+System.out.println(queue.poll()); // "First"
+```
+
+---
+
+### 19. ArrayList vs LinkedList
+
+| **ArrayList** | **LinkedList** |
+|--------------|---------------|
+| Dynamic array implementation | Doubly linked list implementation |
+| Truy cập nhanh: O(1) | Truy cập chậm: O(n) |
+| Thêm/xóa giữa chậm: O(n) | Thêm/xóa nhanh: O(1) |
+| Tốn ít memory | Tốn nhiều memory (lưu prev/next references) |
+| Tốt cho random access | Tốt cho frequent insert/delete |
+| Implement List | Implement List, Deque, Queue |
+| Không thread-safe | Không thread-safe |
+
+**Performance Comparison:**
+
+```java
+import java.util.*;
+
+public class PerformanceTest {
+    public static void main(String[] args) {
+        int n = 100000;
+        
+        // ArrayList
+        List<Integer> arrayList = new ArrayList<>();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < n; i++) {
+            arrayList.add(i); // Add at end - O(1) amortized
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("ArrayList add: " + (end - start) + "ms");
+        
+        start = System.currentTimeMillis();
+        int value = arrayList.get(n/2); // Random access - O(1)
+        end = System.currentTimeMillis();
+        System.out.println("ArrayList get: " + (end - start) + "ms");
+        
+        // LinkedList
+        List<Integer> linkedList = new LinkedList<>();
+        start = System.currentTimeMillis();
+        for (int i = 0; i < n; i++) {
+            linkedList.add(i); // Add at end - O(1)
+        }
+        end = System.currentTimeMillis();
+        System.out.println("LinkedList add: " + (end - start) + "ms");
+        
+        start = System.currentTimeMillis();
+        value = linkedList.get(n/2); // Sequential access - O(n)
+        end = System.currentTimeMillis();
+        System.out.println("LinkedList get: " + (end - start) + "ms");
+    }
+}
+```
+
+**Khi nào dùng:**
+
+**ArrayList:**
+```java
+// Tốt cho: read-heavy operations
+List<String> names = new ArrayList<>();
+names.add("John");
+names.add("Jane");
+names.add("Bob");
+
+// Fast random access
+String second = names.get(1); // O(1)
+
+// Iterate efficiently
+for (String name : names) {
+    System.out.println(name);
+}
+```
+
+**LinkedList:**
+```java
+// Tốt cho: frequent insertions/deletions
+LinkedList<String> queue = new LinkedList<>();
+
+// Fast add at beginning/end
+queue.addFirst("First");  // O(1)
+queue.addLast("Last");    // O(1)
+
+// Fast remove from beginning/end
+String first = queue.removeFirst(); // O(1)
+String last = queue.removeLast();   // O(1)
+
+// Use as Queue
+Queue<String> q = new LinkedList<>();
+q.offer("Task1");
+q.offer("Task2");
+String task = q.poll(); // FIFO
+
+// Use as Deque (Double-ended queue)
+Deque<String> deque = new LinkedList<>();
+deque.addFirst("Front");
+deque.addLast("Back");
+```
+
+---
+
+### 20. HashMap vs TreeMap
+
+| **HashMap** | **TreeMap** |
+|------------|------------|
+| Hash table implementation | Red-Black tree implementation |
+| Không sắp xếp | Sắp xếp theo key (natural order hoặc Comparator) |
+| O(1) average cho get/put | O(log n) cho get/put |
+| Cho phép 1 null key, nhiều null values | Không cho phép null key, cho phép null values |
+| Nhanh hơn | Chậm hơn nhưng có thứ tự |
+| Không thread-safe | Không thread-safe |
+
+**HashMap Example:**
+
+```java
+Map<String, Integer> hashMap = new HashMap<>();
+
+// Add elements
+hashMap.put("John", 25);
+hashMap.put("Jane", 30);
+hashMap.put("Bob", 35);
+hashMap.put("Alice", 28);
+hashMap.put(null, 0); // null key OK
+
+// Iteration - no guaranteed order
+for (Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+    System.out.println(entry.getKey() + ": " + entry.getValue());
+}
+// Output có thể: Bob: 35, null: 0, Alice: 28, Jane: 30, John: 25
+
+// Fast access
+int age = hashMap.get("John"); // O(1)
+```
+
+**TreeMap Example:**
+
+```java
+Map<String, Integer> treeMap = new TreeMap<>();
+
+// Add elements
+treeMap.put("John", 25);
+treeMap.put("Jane", 30);
+treeMap.put("Bob", 35);
+treeMap.put("Alice", 28);
+// treeMap.put(null, 0); // NullPointerException!
+
+// Iteration - sorted by key
+for (Map.Entry<String, Integer> entry : treeMap.entrySet()) {
+    System.out.println(entry.getKey() + ": " + entry.getValue());
+}
+// Output: Alice: 28, Bob: 35, Jane: 30, John: 25 (alphabetical)
+
+// Navigation methods
+String firstKey = treeMap.firstKey();  // "Alice"
+String lastKey = treeMap.lastKey();    // "John"
+Map.Entry<String, Integer> firstEntry = treeMap.firstEntry();
+
+// Range views
+SortedMap<String, Integer> subMap = treeMap.subMap("Bob", "John");
+```
+
+**Custom Comparator với TreeMap:**
+
+```java
+// Sort by value length (descending)
+Map<String, String> map = new TreeMap<>((k1, k2) -> {
+    int lenCompare = Integer.compare(k2.length(), k1.length());
+    return lenCompare != 0 ? lenCompare : k1.compareTo(k2);
+});
+
+map.put("a", "value1");
+map.put("abc", "value2");
+map.put("ab", "value3");
+
+System.out.println(map);
+// {abc=value2, ab=value3, a=value1}
+```
+
+**Khi nào dùng:**
+
+- **HashMap:** Cần hiệu suất cao, không cần thứ tự
+- **TreeMap:** Cần duy trì thứ tự sắp xếp, range queries
+
+---
+
+### 21. HashSet vs TreeSet
+
+| **HashSet** | **TreeSet** |
+|------------|------------|
+| Hash table (HashMap internally) | Red-Black tree (TreeMap internally) |
+| Không sắp xếp | Sắp xếp tự động |
+| O(1) cho add/remove/contains | O(log n) cho add/remove/contains |
+| Cho phép null | Không cho phép null |
+| Nhanh hơn | Chậm hơn |
+
+**HashSet Example:**
+
+```java
+Set<String> hashSet = new HashSet<>();
+
+// Add elements
+hashSet.add("Banana");
+hashSet.add("Apple");
+hashSet.add("Cherry");
+hashSet.add("Apple"); // Duplicate - ignored
+hashSet.add(null);    // null OK
+
+System.out.println(hashSet);
+// Output: [null, Apple, Cherry, Banana] (no guaranteed order)
+
+// Fast operations
+boolean contains = hashSet.contains("Apple"); // O(1)
+hashSet.remove("Banana"); // O(1)
+```
+
+**TreeSet Example:**
+
+```java
+Set<String> treeSet = new TreeSet<>();
+
+// Add elements
+treeSet.add("Banana");
+treeSet.add("Apple");
+treeSet.add("Cherry");
+treeSet.add("Apple"); // Duplicate - ignored
+// treeSet.add(null);  // NullPointerException!
+
+System.out.println(treeSet);
+// Output: [Apple, Banana, Cherry] (sorted)
+
+// Navigation methods
+String first = treeSet.first();  // "Apple"
+String last = treeSet.last();    // "Cherry"
+String lower = treeSet.lower("Banana"); // "Apple"
+String higher = treeSet.higher("Banana"); // "Cherry"
+
+// Range views
+SortedSet<String> subset = treeSet.subSet("Apple", "Cherry");
+```
+
+**Custom Object với TreeSet:**
+
+```java
+class Person implements Comparable<Person> {
+    String name;
+    int age;
+    
+    public Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    @Override
+    public int compareTo(Person other) {
+        return Integer.compare(this.age, other.age);
+    }
+    
+    @Override
+    public String toString() {
+        return name + "(" + age + ")";
+    }
+}
+
+Set<Person> people = new TreeSet<>();
+people.add(new Person("John", 25));
+people.add(new Person("Jane", 30));
+people.add(new Person("Bob", 20));
+
+System.out.println(people);
+// [Bob(20), John(25), Jane(30)] - sorted by age
+```
+
+---
+
+### 22. Iterator vs ListIterator
+
+| **Iterator** | **ListIterator** |
+|-------------|-----------------|
+| Cho tất cả Collections | Chỉ cho List |
+| Forward direction only | Forward và backward |
+| Không thể modify | Có thể add/set/remove |
+| 3 methods: hasNext(), next(), remove() | 9 methods: thêm previous(), hasPrevious(), add(), set(), nextIndex(), previousIndex() |
+
+**Iterator Example:**
+
+```java
+List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C", "D"));
+
+// Forward iteration
+Iterator<String> iterator = list.iterator();
+while (iterator.hasNext()) {
+    String element = iterator.next();
+    System.out.println(element);
+    
+    if (element.equals("B")) {
+        iterator.remove(); // Remove "B"
+    }
+}
+
+System.out.println(list); // [A, C, D]
+```
+
+**ListIterator Example:**
+
+```java
+List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C", "D"));
+
+// Forward iteration
+ListIterator<String> listIterator = list.listIterator();
+System.out.println("Forward:");
+while (listIterator.hasNext()) {
+    int index = listIterator.nextIndex();
+    String element = listIterator.next();
+    System.out.println(index + ": " + element);
+    
+    if (element.equals("B")) {
+        listIterator.set("B-Modified"); // Modify
+    }
+}
+
+System.out.println("\nBackward:");
+// Backward iteration
+while (listIterator.hasPrevious()) {
+    int index = listIterator.previousIndex();
+    String element = listIterator.previous();
+    System.out.println(index + ": " + element);
+}
+
+// Add element
+listIterator = list.listIterator();
+while (listIterator.hasNext()) {
+    if (listIterator.next().equals("B-Modified")) {
+        listIterator.add("B-New"); // Add after current
+    }
+}
+
+System.out.println(list); // [A, B-Modified, B-New, C, D]
+```
+
+**Methods Comparison:**
+
+```java
+// Iterator methods
+boolean hasNext()
+E next()
+void remove()
+
+// ListIterator additional methods
+boolean hasPrevious()
+E previous()
+int nextIndex()
+int previousIndex()
+void set(E e)
+void add(E e)
+```
+
+---
+
+### 23. Comparable Interface
+
+**Mục đích:** Định nghĩa natural ordering cho objects của một class.
+
+**Interface:**
+```java
+public interface Comparable<T> {
+    int compareTo(T o);
+}
+```
+
+**Return values:**
+- Âm (< 0): this < other
+- 0: this == other  
+- Dương (> 0): this > other
+
+**Example - Student:**
+
+```java
+class Student implements Comparable<Student> {
+    String name;
+    int marks;
+    int rollNo;
+    
+    public Student(String name, int marks, int rollNo) {
+        this.name = name;
+        this.marks = marks;
+        this.rollNo = rollNo;
+    }
+    
+    // Natural ordering by marks
+    @Override
+    public int compareTo(Student other) {
+        return this.marks - other.marks; // Ascending order
+        // return other.marks - this.marks; // Descending order
+    }
+    
+    @Override
+    public String toString() {
+        return name + "(" + marks + ")";
+    }
+}
+
+// Sử dụng
+List<Student> students = new ArrayList<>();
+students.add(new Student("John", 85, 1));
+students.add(new Student("Jane", 92, 2));
+students.add(new Student("Bob", 78, 3));
+
+Collections.sort(students); // Dùng compareTo()
+System.out.println(students);
+// [Bob(78), John(85), Jane(92)]
+
+// Also works with TreeSet
+Set<Student> treeSet = new TreeSet<>(students);
+System.out.println(treeSet);
+// [Bob(78), John(85), Jane(92)]
+```
+
+**Best Practices:**
+
+```java
+class Person implements Comparable<Person> {
+    String name;
+    int age;
+    
+    @Override
+    public int compareTo(Person other) {
+        // ❌ Tránh: có thể overflow
+        // return this.age - other.age;
+        
+        // ✅ Tốt: dùng Integer.compare()
+        return Integer.compare(this.age, other.age);
+    }
+}
+```
+
+**Multiple fields comparison:**
+
+```java
+class Employee implements Comparable<Employee> {
+    String department;
+    String name;
+    int salary;
+    
+    @Override
+    public int compareTo(Employee other) {
+        // Compare by department first
+        int deptCompare = this.department.compareTo(other.department);
+        if (deptCompare != 0) {
+            return deptCompare;
+        }
+        
+        // Then by salary (descending)
+        int salaryCompare = Integer.compare(other.salary, this.salary);
+        if (salaryCompare != 0) {
+            return salaryCompare;
+        }
+        
+        // Finally by name
+        return this.name.compareTo(other.name);
+    }
+}
+```
+
+### Comparable vs Comparator
+
+| **Comparable** | **Comparator** |
+|---------------|---------------|
+| Trong cùng class | Class riêng hoặc lambda |
+| `compareTo(T o)` | `compare(T o1, T o2)` |
+| 1 sorting logic (natural order) | Nhiều sorting logic |
+| `Collections.sort(list)` | `Collections.sort(list, comparator)` |
+| Modify class source | Không cần modify class |
+
+**Comparator Example:**
+
+```java
+class Student {
+    String name;
+    int marks;
+    
+    public Student(String name, int marks) {
+        this.name = name;
+        this.marks = marks;
+    }
+    
+    @Override
+    public String toString() {
+        return name + "(" + marks + ")";
+    }
+}
+
+List<Student> students = new ArrayList<>();
+students.add(new Student("John", 85));
+students.add(new Student("Jane", 92));
+students.add(new Student("Bob", 78));
+
+// Sort by marks (ascending)
+Collections.sort(students, new Comparator<Student>() {
+    @Override
+    public int compare(Student s1, Student s2) {
+        return Integer.compare(s1.marks, s2.marks);
+    }
+});
+
+// Sort by marks (descending) - Lambda
+Collections.sort(students, (s1, s2) -> Integer.compare(s2.marks, s1.marks));
+
+// Sort by name
+Collections.sort(students, (s1, s2) -> s1.name.compareTo(s2.name));
+
+// Java 8+ Comparator methods
+students.sort(Comparator.comparing(s -> s.marks)); // By marks
+students.sort(Comparator.comparing(s -> s.name));  // By name
+students.sort(Comparator.comparing(Student::getName)); // Method reference
+```
+
+---
+
+### 24. Collections vs Collection
+
+**Collection (Interface):**
+- Root interface của Collections framework
+- Trong package `java.util`
+- Represents một nhóm objects
+- Không bao gồm Map
+
+```java
+public interface Collection<E> extends Iterable<E> {
+    // Core methods
+    boolean add(E e);
+    boolean remove(Object o);
+    boolean contains(Object o);
+    int size();
+    boolean isEmpty();
+    void clear();
+    Iterator<E> iterator();
+    Object[] toArray();
+    // ... more methods
+}
+```
+
+**Collections (Class):**
+- Utility class trong `java.util`
+- Chứa static methods để thao tác với collections
+- Không thể instantiate (constructor private)
+
+```java
+public class Collections {
+    // Private constructor
+    private Collections() {}
+    
+    // Static utility methods
+    public static <T> void sort(List<T> list) { }
+    public static void reverse(List<?> list) { }
+    public static void shuffle(List<?> list) { }
+    // ... many more
+}
+```
+
+**Collection Example:**
+
+```java
+// Collection là interface
+Collection<String> collection = new ArrayList<>();
+collection.add("A");
+collection.add("B");
+collection.remove("A");
+
+// Có thể assign các implementations khác
+collection = new HashSet<>();
+collection = new LinkedList<>();
+```
+
+**Collections Example:**
+
+```java
+List<Integer> numbers = new ArrayList<>(Arrays.asList(3, 1, 4, 1, 5, 9));
+
+// Sort
+Collections.sort(numbers);
+System.out.println(numbers); // [1, 1, 3, 4, 5, 9]
+
+// Reverse
+Collections.reverse(numbers);
+System.out.println(numbers); // [9, 5, 4, 3, 1, 1]
+
+// Shuffle
+Collections.shuffle(numbers);
+System.out.println(numbers); // Random order
+
+// Binary search (list phải sorted)
+Collections.sort(numbers);
+int index = Collections.binarySearch(numbers, 4);
+
+// Min/Max
+int min = Collections.min(numbers);
+int max = Collections.max(numbers);
+
+// Frequency
+int freq = Collections.frequency(numbers, 1); // 2
+
+// Replace all
+Collections.replaceAll(numbers, 1, 10);
+
+// Fill
+Collections.fill(numbers, 0);
+
+// Copy
+List<Integer> dest = new ArrayList<>(Collections.nCopies(numbers.size(), 0));
+Collections.copy(dest, numbers);
+
+// Unmodifiable
+List<String> immutableList = Collections.unmodifiableList(
+    new ArrayList<>(Arrays.asList("A", "B", "C"))
+);
+// immutableList.add("D"); // UnsupportedOperationException
+
+// Synchronized
+List<String> syncList = Collections.synchronizedList(new ArrayList<>());
+
+// Singleton
+Set<String> singleton = Collections.singleton("Only");
+
+// Empty collections
+List<String> emptyList = Collections.emptyList();
+Set<String> emptySet = Collections.emptySet();
+Map<String, String> emptyMap = Collections.emptyMap();
+```
+
+**Analogy:**
+- **Collection:** Giống như interface `Array`
+- **Collections:** Giống như utility class `Arrays`
+
+```java
+// Tương tự với Arrays
+int[] arr = {3, 1, 4};
+Arrays.sort(arr);        // Static method từ Arrays class
+String str = Arrays.toString(arr);
+```
+
+---
+
+### 25. java.util.concurrent Package
+
+**Mục đích:** Hỗ trợ concurrent programming hiệu quả và an toàn.
+
+#### 1. Thread-safe Collections
+
+```java
+import java.util.concurrent.*;
+
+// ConcurrentHashMap - thread-safe, không lock toàn bộ map
+Map<String, Integer> map = new ConcurrentHashMap<>();
+map.put("A", 1);
+map.put("B", 2);
+
+// CopyOnWriteArrayList - thread-safe for read-heavy scenarios
+List<String> list = new CopyOnWriteArrayList<>();
+list.add("A");
+list.add("B");
+
+// ConcurrentLinkedQueue - thread-safe queue
+Queue<String> queue = new ConcurrentLinkedQueue<>();
+queue.offer("Task1");
+queue.offer("Task2");
+
+// BlockingQueue - với blocking operations
+BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<>();
+blockingQueue.put("Item"); // Block nếu full
+String item = blockingQueue.take(); // Block nếu empty
+```
+
+#### 2. Executor Framework (Thread Pools)
+
+```java
+import java.util.concurrent.*;
+
+// Fixed thread pool
+ExecutorService executor = Executors.newFixedThreadPool(5);
+
+// Submit tasks
+for (int i = 0; i < 10; i++) {
+    final int taskId = i;
+    executor.submit(() -> {
+        System.out.println("Task " + taskId + " by " + 
+            Thread.currentThread().getName());
+        Thread.sleep(1000);
+    });
+}
+
+// Shutdown
+executor.shutdown();
+executor.awaitTermination(1, TimeUnit.MINUTES);
+
+// Cached thread pool - tạo threads as needed
+ExecutorService cachedPool = Executors.newCachedThreadPool();
+
+// Single thread executor
+ExecutorService singleExecutor = Executors.newSingleThreadExecutor();
+
+// Scheduled executor
+ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+scheduler.schedule(() -> {
+    System.out.println("Executed after 5 seconds");
+}, 5, TimeUnit.SECONDS);
+
+scheduler.scheduleAtFixedRate(() -> {
+    System.out.println("Repeated task");
+}, 0, 1, TimeUnit.SECONDS);
+```
+
+#### 3. Atomic Variables
+
+```java
+import java.util.concurrent.atomic.*;
+
+// AtomicInteger - thread-safe counter
+AtomicInteger counter = new AtomicInteger(0);
+
+// Increment atomically (thread-safe)
+counter.incrementAndGet(); // ++counter
+counter.getAndIncrement(); // counter++
+counter.addAndGet(5);      // counter += 5
+
+// Compare and set
+counter.compareAndSet(5, 10); // If value is 5, set to 10
+
+// Other atomic types
+AtomicLong atomicLong = new AtomicLong();
+AtomicBoolean atomicBoolean = new AtomicBoolean();
+AtomicReference<String> atomicRef = new AtomicReference<>();
+```
+
+**Ví dụ với multiple threads:**
+
+```java
+AtomicInteger counter = new AtomicInteger(0);
+
+Runnable task = () -> {
+    for (int i = 0; i < 1000; i++) {
+        counter.incrementAndGet(); // Thread-safe
+    }
+};
+
+Thread t1 = new Thread(task);
+Thread t2 = new Thread(task);
+Thread t3 = new Thread(task);
+
+t1.start(); t2.start(); t3.start();
+t1.join(); t2.join(); t3.join();
+
+System.out.println("Counter: " + counter.get()); // 3000 (correct!)
+```
+
+#### 4. Locks (Advanced Locking)
+
+```java
+import java.util.concurrent.locks.*;
+
+// ReentrantLock - more flexible than synchronized
+Lock lock = new ReentrantLock();
+
+lock.lock();
+try {
+    // Critical section
+    System.out.println("Locked");
+} finally {
+    lock.unlock(); // Always unlock in finally
+}
+
+// Try lock with timeout
+if (lock.tryLock(1, TimeUnit.SECONDS)) {
+    try {
+        // Got lock
+    } finally {
+        lock.unlock();
+    }
+} else {
+    // Couldn't get lock
+}
+
+// ReadWriteLock - separate locks for read/write
+ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
+// Multiple readers can access simultaneously
+rwLock.readLock().lock();
+try {
+    // Read operation
+} finally {
+    rwLock.readLock().unlock();
+}
+
+// Only one writer, blocks all readers
+rwLock.writeLock().lock();
+try {
+    // Write operation
+} finally {
+    rwLock.writeLock().unlock();
+}
+```
+
+#### 5. Synchronizers
+
+**CountDownLatch:**
+```java
+CountDownLatch latch = new CountDownLatch(3); // Wait for 3 events
+
+// Worker threads
+for (int i = 0; i < 3; i++) {
+    new Thread(() -> {
+        System.out.println("Working...");
+        Thread.sleep(1000);
+        latch.countDown(); // Signal completion
+    }).start();
+}
+
+// Main thread waits
+latch.await(); // Block until count reaches 0
+System.out.println("All workers completed!");
+```
+
+**CyclicBarrier:**
+```java
+CyclicBarrier barrier = new CyclicBarrier(3, () -> {
+    System.out.println("All threads reached barrier!");
+});
+
+for (int i = 0; i < 3; i++) {
+    new Thread(() -> {
+        System.out.println("Thread waiting at barrier");
+        barrier.await(); // Wait for all threads
+        System.out.println("Barrier passed!");
+    }).start();
+}
+```
+
+**Semaphore:**
+```java
+Semaphore semaphore = new Semaphore(2); // 2 permits
+
+for (int i = 0; i < 5; i++) {
+    new Thread(() -> {
+        semaphore.acquire(); // Get permit
+        try {
+            System.out.println("Accessing resource");
+            Thread.sleep(1000);
+        } finally {
+            semaphore.release(); // Release permit
+        }
+    }).start();
+}
+```
+
+---
+
+## Exception Handling
+
+### 26. Exception trong Java
+
+**Định nghĩa:** Sự kiện bất thường xảy ra trong lúc chạy chương trình, làm gián đoạn normal flow.
+
+**Exception Hierarchy:**
+
+```
+java.lang.Throwable
+├── Error (System errors - không nên catch)
+│   ├── OutOfMemoryError
+│   ├── StackOverflowError
+│   ├── VirtualMachineError
+│   └── AssertionError
+│
+└── Exception
+    ├── RuntimeException (Unchecked)
+    │   ├── NullPointerException
+    │   ├── ArrayIndexOutOfBoundsException
+    │   ├── ArithmeticException
+    │   ├── IllegalArgumentException
+    │   ├── NumberFormatException
+    │   └── ClassCastException
+    │
+    └── Checked Exceptions
+        ├── IOException
+        │   ├── FileNotFoundException
+        │   └── EOFException
+        ├── SQLException
+        ├── ClassNotFoundException
+        ├── InterruptedException
+        └── ParseException
+```
+
+**Ví dụ các loại exceptions:**
+
+```java
+// RuntimeException (Unchecked)
+public class ExceptionExamples {
+    public static void main(String[] args) {
+        // NullPointerException
+        String str = null;
+        // System.out.println(str.length()); // NPE
+        
+        // ArithmeticException
+        // int result = 10 / 0; // Division by zero
+        
+        // ArrayIndexOutOfBoundsException
+        int[] arr = {1, 2, 3};
+        // int val = arr[5]; // Index out of bounds
+        
+        // NumberFormatException
+        // int num = Integer.parseInt("abc"); // Invalid number
+        
+        // ClassCastException
+        Object obj = "Hello";
+        // Integer num = (Integer) obj; // Cannot cast
+    }
+}
+
+// Checked Exception
+public void readFile() throws IOException {
+    FileReader file = new FileReader("data.txt");
+    // Must handle or declare
+}
+```
+
+**Try-Catch Example:**
+
+```java
+public class ExceptionHandling {
+    public static void main(String[] args) {
+        try {
+            // Code that might throw exception
+            int[] arr = {1, 2, 3};
+            System.out.println(arr[5]);
+            
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Array index out of bounds!");
+            e.printStackTrace();
+            
+        } catch (Exception e) {
+            System.out.println("Some other exception: " + e.getMessage());
+            
+        } finally {
+            System.out.println("Always executed");
+        }
+    }
+}
+```
+
+---
+
+### 27. Exception Propagation
+
+**Định nghĩa:** Exception tự động truyền từ method này sang method gọi nó trong call stack.
+
+**Ví dụ:**
+
+```java
+class ExceptionPropagation {
+    
+    void method1() {
+        int result = 10 / 0; // ArithmeticException ở đây
+        System.out.println("This won't print");
+    }
+    
+    void method2() {
+        method1(); // Exception propagate lên đây
+        System.out.println("This won't print either");
+    }
+    
+    void method3() {
+        try {
+            method2(); // Bắt exception ở đây
+        } catch (ArithmeticException e) {
+            System.out.println("Caught in method3: " + e);
+        }
+        System.out.println("method3 continues...");
+    }
+    
+    public static void main(String[] args) {
+        new ExceptionPropagation().method3();
+    }
+}
+```
+
+**Output:**
+```
+Caught in method3: java.lang.ArithmeticException: / by zero
+method3 continues...
+```
+
+**Call Stack Visualization:**
+
+```
+main()
+  └─> method3() [TRY-CATCH] ← Exception caught here
+        └─> method2() ← Exception propagates through
+              └─> method1() ← Exception thrown here
+```
+
+**Với Checked Exceptions:**
+
+```java
+class CheckedPropagation {
+    
+    // Must declare throws
+    void method1() throws IOException {
+        throw new IOException("File error");
+    }
+    
+    // Must declare throws hoặc handle
+    void method2() throws IOException {
+        method1(); // Propagate
+    }
+    
+    void method3() {
+        try {
+            method2(); // Handle here
+        } catch (IOException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
+    }
+}
+```
+
+---
+
+### 28. Checked vs Unchecked Exceptions
+
+| **Checked Exceptions** | **Unchecked Exceptions** |
+|----------------------|------------------------|
+| Kiểm tra tại compile-time | Kiểm tra tại runtime |
+| Phải handle (try-catch) hoặc declare (throws) | Không bắt buộc handle |
+| Extend Exception (trừ RuntimeException) | Extend RuntimeException |
+| Lỗi có thể recover được | Lỗi lập trình, khó recover |
+| IOException, SQLException, ClassNotFoundException | NullPointerException, ArithmeticException, ArrayIndexOutOfBoundsException |
+
+**Checked Exception Examples:**
+
+```java
+// IOException
+public void readFile() throws IOException {
+    FileReader file = new FileReader("data.txt");
+    BufferedReader reader = new BufferedReader(file);
+    String line = reader.readLine();
+    reader.close();
+}
+
+// SQLException
+public void queryDatabase() throws SQLException {
+    Connection conn = DriverManager.getConnection("jdbc:...");
+    Statement stmt = conn.createStatement();
+    ResultSet rs = stmt.executeQuery("SELECT * FROM users");
+}
+
+// ClassNotFoundException
+public void loadClass() throws ClassNotFoundException {
+    Class.forName("com.example.MyClass");
+}
+
+// Phải handle
+public void useChecked() {
+    try {
+        readFile();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+**Unchecked Exception Examples:**
+
+```java
+// NullPointerException
+String str = null;
+// str.length(); // Runtime error
+
+// ArithmeticException
+// int result = 10 / 0; // Runtime error
+
+// ArrayIndexOutOfBoundsException
+int[] arr = {1, 2, 3};
+// int val = arr[10]; // Runtime error
+
+// IllegalArgumentException
+public void setAge(int age) {
+    if (age < 0) {
+        throw new IllegalArgumentException("Age cannot be negative");
+    }
+}
+
+// Không bắt buộc handle (nhưng nên!)
+public void useUnchecked() {
+    setAge(-5); // Có thể throw, không cần try-catch
+}
+```
+
+**Khi nào dùng:**
+
+**Checked Exception:**
+- External errors (file, network, database)
+- Có thể recover
+- Caller nên xử lý
+
+**Unchecked Exception:**
+- Programming errors
+- Không thể/không nên recover
+- Nên fix code
+
+---
+
+### 29. try-catch-finally Block
+
+**Cú pháp đầy đủ:**
+
+```java
+try {
+    // Code có thể throw exception
+} catch (ExceptionType1 e1) {
+    // Handle ExceptionType1
+} catch (ExceptionType2 e2) {
+    // Handle ExceptionType2
+} finally {
+    // Always executed (cleanup code)
+}
+```
+
+**Ví dụ đầy đủ:**
+
+```java
+public void processFile(String filename) {
+    FileReader reader = null;
+    BufferedReader br = null;
+    
+    try {
+        System.out.println("Opening file...");
+        reader = new FileReader(filename);
+        br = new BufferedReader(reader);
+        
+        String line;
+        while ((line = br.readLine()) != null) {
+            System.out.println(line);
+        }
+        
+    } catch (FileNotFoundException e) {
+        System.err.println("File not found: " + filename);
+        e.printStackTrace();
+        
+    } catch (IOException e) {
+        System.err.println("Error reading file");
+        e.printStackTrace();
+        
+    } finally {
+        System.out.println("Cleaning up...");
+        try {
+            if (br != null) br.close();
+            if (reader != null) reader.close();
+        } catch (IOException e) {
+            System.err.println("Error closing file");
+        }
+    }
+}
+```
+
+**Multi-catch (Java 7+):**
+
+```java
+try {
+    // Code
+} catch (IOException | SQLException e) {
+    // Handle both exceptions same way
+    System.out.println("Error: " + e.getMessage());
+}
+```
+
+**Try-with-resources (Java 7+):**
+
+```java
+// Tự động close resources
+try (FileReader reader = new FileReader("file.txt");
+     BufferedReader br = new BufferedReader(reader)) {
+    
+    String line = br.readLine();
+    System.out.println(line);
+    
+} catch (IOException e) {
+    e.printStackTrace();
+}
+// reader và br tự động close, không cần finally
+```
+
+**finally với return:**
+
+```java
+public int testFinally() {
+    try {
+        System.out.println("Try block");
+        return 1;
+    } catch (Exception e) {
+        System.out.println("Catch block");
+        return 2;
+    } finally {
+        System.out.println("Finally block"); // Vẫn chạy!
+        // return 3; // Ghi đè return value (không khuyến khích)
+    }
+}
+
+// Output:
+// Try block
+// Finally block
+// Returns: 1
+```
+
+**Khi finally KHÔNG chạy:**
+
+```java
+try {
+    System.exit(0); // JVM terminates
+} finally {
+    System.out.println("Won't print");
+}
+```
+
+---
+
+### 30. throw vs throws
+
+**throw:**
+- Keyword để ném exception
+- Dùng trong method body
+- Theo sau là instance của exception
+- Chỉ throw 1 exception tại 1 thời điểm
+
+**throws:**
+- Keyword để declare exception
+- Dùng trong method signature
+- Theo sau là class name của exception
+- Có thể declare nhiều exceptions
+
+**throw Example:**
+
+```java
+public class ThrowExample {
+    
+    public void validateAge(int age) {
+        if (age < 18) {
+            // Throw exception
+            throw new IllegalArgumentException("Age must be 18 or above");
+        }
+        System.out.println("Age is valid");
+    }
+    
+    public void withdraw(double amount) {
+        if (amount > balance) {
+            throw new RuntimeException("Insufficient balance");
+        }
+        balance -= amount;
+    }
+    
+    public static void main(String[] args) {
+        ThrowExample obj = new ThrowExample();
+        
+        try {
+            obj.validateAge(15); // Throws exception
+        } catch (IllegalArgumentException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
+    }
+}
+```
+
+**throws Example:**
+
+```java
+public class ThrowsExample {
+    
+    // Declare exceptions with throws
+    public void readFile(String filename) 
+            throws IOException, FileNotFoundException {
+        FileReader file = new FileReader(filename); // May throw
+        BufferedReader reader = new BufferedReader(file);
+        String line = reader.readLine(); // May throw
+    }
+    
+    // Multiple exceptions
+    public void processData() 
+            throws IOException, SQLException, ParseException {
+        readFile("data.txt");
+        // Database operations
+        // Parsing operations
+    }
+    
+    // Caller must handle
+    public void caller() {
+        try {
+            readFile("test.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Or declare again
+    public void caller2() throws IOException {
+        readFile("test.txt"); // Propagate
+    }
+}
+```
+
+**Kết hợp throw và throws:**
+
+```java
+public void processPayment(double amount) throws PaymentException {
+    if (amount <= 0) {
+        throw new IllegalArgumentException("Amount must be positive");
+    }
+    
+    if (amount > MAX_AMOUNT) {
+        throw new PaymentException("Amount exceeds limit");
+    }
+    
+    // Process payment
+}
+```
+
+**So sánh:**
+
+```java
+// throw - thực sự ném exception
+throw new IOException("Error message");
+
+// throws - chỉ declare
+public void method() throws IOException {
+    // May or may not throw
+}
+```
+
+---
+
+### 31. finally Block Purpose
+
+**3 Mục đích chính:**
+
+#### 1. Resource Cleanup
+
+```java
+Connection conn = null;
+Statement stmt = null;
+ResultSet rs = null;
+
+try {
+    conn = DriverManager.getConnection("jdbc:...");
+    stmt = conn.createStatement();
+    rs = stmt.executeQuery("SELECT * FROM users");
+    
+    while (rs.next()) {
+        System.out.println(rs.getString("name"));
+    }
+    
+} catch (SQLException e) {
+    e.printStackTrace();
+    
+} finally {
+    // Cleanup - always runs
+    try {
+        if (rs != null) rs.close();
+        if (stmt != null) stmt.close();
+        if (conn != null) conn.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+#### 2. Guaranteed Execution
+
+```java
+public void criticalOperation() {
+    Lock lock = new ReentrantLock();
+    lock.lock();
+    
+    try {
+        // Critical section
+        performOperation();
+        
+    } finally {
+        lock.unlock(); // Đảm bảo luôn unlock
+    }
+}
+```
+
+#### 3. Prevent Resource Leaks
+
+```java
+public String readFile(String filename) {
+    FileInputStream fis = null;
+    
+    try {
+        fis = new FileInputStream(filename);
+        // Read file
+        return "Content";
+        
+    } catch (IOException e) {
+        e.printStackTrace();
+        return null;
+        
+    } finally {
+        // Chạy dù có return trong try/catch
+        if (fis != null) {
+            try {
+                fis.close(); // Prevent resource leak
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+**Khi finally chạy:**
+
+```java
+public void testScenarios() {
+    // Scenario 1: No exception
+    try {
+        System.out.println("Normal execution");
+    } finally {
+        System.out.println("Finally runs"); // ✓ Runs
+    }
+    
+    // Scenario 2: Exception caught
+    try {
+        throw new Exception();
+    } catch (Exception e) {
+        System.out.println("Caught");
+    } finally {
+        System.out.println("Finally runs"); // ✓ Runs
+    }
+    
+    // Scenario 3: Exception not caught
+    try {
+        throw new RuntimeException();
+    } finally {
+        System.out.println("Finally runs"); // ✓ Runs (then exception propagates)
+    }
+    
+    // Scenario 4: Return in try
+    try {
+        return;
+    } finally {
+        System.out.println("Finally runs"); // ✓ Runs before return
+    }
+}
+```
+
+**Modern Alternative - Try-with-resources:**
+
+```java
+// Old way
+BufferedReader reader = null;
+try {
+    reader = new BufferedReader(new FileReader("file.txt"));
+    return reader.readLine();
+} finally {
+    if (reader != null) {
+        reader.close();
+    }
+}
+
+// Modern way (Java 7+)
+try (BufferedReader reader = new BufferedReader(new FileReader("file.txt"))) {
+    return reader.readLine();
+} // Tự động close, không cần finally
+```
+
+---
+
+### 32. Base Class của Exception
+
+**Throwable** là base class của tất cả exceptions và errors.
+
+**Hierarchy:**
+
+```
+java.lang.Object
+    └── java.lang.Throwable
+            ├── java.lang.Error
+            │       ├── OutOfMemoryError
+            │       ├── StackOverflowError
+            │       └── VirtualMachineError
+            │
+            └── java.lang.Exception
+                    ├── RuntimeException (Unchecked)
+                    │       ├── NullPointerException
+                    │       ├── ArithmeticException
+                    │       └── IllegalArgumentException
+                    │
+                    └── Checked Exceptions
+                            ├── IOException
+                            ├── SQLException
+                            └── ClassNotFoundException
+```
+
+**Throwable Methods:**
+
+```java
+public class ThrowableMethods {
+    public static void main(String[] args) {
+        try {
+            method1();
+        } catch (Throwable t) { // Catch everything
+            
+            // Get error message
+            String message = t.getMessage();
+            System.out.println("Message: " + message);
+            
+            // Print stack trace
+            t.printStackTrace();
+            
+            // Get cause
+            Throwable cause = t.getCause();
+            
+            // String representation
+            String str = t.toString();
+            
+            // Get stack trace as array
+            StackTraceElement[] elements = t.getStackTrace();
+            for (StackTraceElement element : elements) {
+                System.out.println(element.getClassName() + "." + 
+                    element.getMethodName() + ":" + element.getLineNumber());
+            }
+        }
+    }
+    
+    static void method1() throws Exception {
+        method2();
+    }
+    
+    static void method2() throws Exception {
+        throw new Exception("Something went wrong");
+    }
+}
+```
+
+**Exception Chaining:**
+
+```java
+public void processData() {
+    try {
+        readFile();
+    } catch (IOException e) {
+        // Wrap original exception
+        throw new DataProcessingException("Failed to process data", e);
+    }
+}
+
+// Custom exception với cause
+class DataProcessingException extends Exception {
+    public DataProcessingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+// Retrieve original cause
+try {
+    processData();
+} catch (DataProcessingException e) {
+    System.out.println("Error: " + e.getMessage());
+    System.out.println("Caused by: " + e.getCause());
+}
+```
+
+**Lưu ý:**
+- Không nên catch Throwable trong production code
+- Catch Exception hoặc specific exceptions
+- Error không nên catch (system-level)
+
+---
+
+### 33. Custom Exception
+
+**Cách tạo:**
+
+1. Extend Exception (checked) hoặc RuntimeException (unchecked)
+2. Tạo constructors
+3. (Optional) Thêm custom fields/methods
+
+**Checked Custom Exception:**
+
+```java
+// Custom checked exception
+public class InsufficientBalanceException extends Exception {
+    private double balance;
+    private double requiredAmount;
+    
+    // Constructor 1: Message only
+    public InsufficientBalanceException(String message) {
+        super(message);
+    }
+    
+    // Constructor 2: Message + details
+    public InsufficientBalanceException(String message, double balance, double required) {
+        super(message);
+        this.balance = balance;
+        this.requiredAmount = required;
+    }
+    
+    // Constructor 3: Message + cause
+    public InsufficientBalanceException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
+    // Custom methods
+    public double getBalance() {
+        return balance;
+    }
+    
+    public double getRequiredAmount() {
+        return requiredAmount;
+    }
+    
+    public double getShortfall() {
+        return requiredAmount - balance;
+    }
+    
+    @Override
+    public String toString() {
+        return super.toString() + 
+            " [Balance: " + balance + ", Required: " + requiredAmount + "]";
+    }
+}
+
+// Sử dụng
+class BankAccount {
+    private double balance;
+    
+    public void withdraw(double amount) throws InsufficientBalanceException {
+        if (amount > balance) {
+            throw new InsufficientBalanceException(
+                "Cannot withdraw " + amount,
+                balance,
+                amount
+            );
+        }
+        balance -= amount;
+    }
+}
+
+// Client code
+public static void main(String[] args) {
+    BankAccount account = new BankAccount();
+    
+    try {
+        account.withdraw(1000);
+    } catch (InsufficientBalanceException e) {
+        System.out.println("Error: " + e.getMessage());
+        System.out.println("Current balance: " + e.getBalance());
+        System.out.println("Shortfall: " + e.getShortfall());
+    }
+}
+```
+
+**Unchecked Custom Exception:**
+
+```java
+// Custom unchecked exception
+public class InvalidAgeException extends RuntimeException {
+    private int age;
+    
+    public InvalidAgeException(String message) {
+        super(message);
+    }
+    
+    public InvalidAgeException(String message, int age) {
+        super(message);
+        this.age = age;
+    }
+    
+    public int getAge() {
+        return age;
+    }
+}
+
+// Sử dụng (không cần throws)
+class Person {
+    private int age;
+    
+    public void setAge(int age) {
+        if (age < 0 || age > 150) {
+            throw new InvalidAgeException("Invalid age: " + age, age);
+        }
+        this.age = age;
+    }
+}
+
+// Client code (không bắt buộc try-catch)
+Person person = new Person();
+person.setAge(-5); // Throws InvalidAgeException
+```
+
+**Business Logic Custom Exceptions:**
+
+```java
+// E-commerce exceptions
+public class OrderException extends Exception {
+    public OrderException(String message) {
+        super(message);
+    }
+}
+
+public class ProductOutOfStockException extends OrderException {
+    private String productId;
+    
+    public ProductOutOfStockException(String productId) {
+        super("Product out of stock: " + productId);
+        this.productId = productId;
+    }
+}
+
+public class PaymentFailedException extends OrderException {
+    private String transactionId;
+    
+    public PaymentFailedException(String message, String transactionId) {
+        super(message);
+        this.transactionId = transactionId;
+    }
+}
+
+// Service layer
+class OrderService {
+    public void placeOrder(Order order) 
+            throws ProductOutOfStockException, PaymentFailedException {
+        
+        if (!isInStock(order.getProductId())) {
+            throw new ProductOutOfStockException(order.getProductId());
+        }
+        
+        if (!processPayment(order)) {
+            throw new PaymentFailedException(
+                "Payment declined", 
+                order.getTransactionId()
+            );
+        }
+        
+        // Place order
+    }
+}
+```
+
+**Best Practices:**
+
+1. **Meaningful names:** `InvalidEmailException` not `Exception1`
+2. **Proper inheritance:** Checked for recoverable, Unchecked for programming errors
+3. **Constructors:** Support message, cause, and both
+4. **Documentation:** Use Javadoc
+5. **Don't overuse:** Only when needed
+
+```java
+/**
+ * Thrown when user authentication fails.
+ * 
+ * @author Your Name
+ * @since 1.0
+ */
+public class AuthenticationException extends Exception {
+    
+    private String username;
+    
+    /**
+     * Constructs a new authentication exception.
+     * 
+     * @param message the detail message
+     * @param username the username that failed authentication
+     */
+    public AuthenticationException(String message, String username) {
+        super(message);
+        this.username = username;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+}
+```
+
+---
+
+### 34. Uncaught Exception Behavior
+
+**Điều gì xảy ra khi exception không được caught:**
+
+1. Exception propagate lên call stack
+2. Nếu không method nào catch → Thread terminates
+3. Stack trace được in ra
+4. Program crash (nếu là main thread)
+
+**Ví dụ:**
+
+```java
+public class UncaughtExample {
+    public static void main(String[] args) {
+        System.out.println("Program started");
+        method1();
+        System.out.println("This line never executes");
+    }
+    
+    static void method1() {
+        method2();
+    }
+    
+    static void method2() {
+        method3();
+    }
+    
+    static void method3() {
+        int result = 10 / 0; // ArithmeticException
+    }
+}
+```
+
+**Output:**
+
+```
+Program started
+Exception in thread "main" java.lang.ArithmeticException: / by zero
+    at UncaughtExample.method3(UncaughtExample.java:14)
+    at UncaughtExample.method2(UncaughtExample.java:10)
+    at UncaughtExample.method1(UncaughtExample.java:6)
+    at UncaughtExample.main(UncaughtExample.java:3)
+```
+
+**Với Multiple Threads:**
+
+```java
+public class MultiThreadException {
+    public static void main(String[] args) {
+        System.out.println("Main thread started");
+        
+        // Start new thread
+        Thread thread = new Thread(() -> {
+            System.out.println("Worker thread started");
+            int result = 10 / 0; // Exception in worker thread
+            System.out.println("This won't print");
+        });
+        thread.start();
+        
+        // Main thread continues
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        System.out.println("Main thread continues"); // This prints!
+    }
+}
+```
+
+**Output:**
+
+```
+Main thread started
+Worker thread started
+Exception in thread "Thread-0" java.lang.ArithmeticException: / by zero
+    at MultiThreadException.lambda$main$0(...)
+Main thread continues
+```
+
+**Default Exception Handler:**
+
+```java
+// Set global uncaught exception handler
+Thread.setDefaultUncaughtExceptionHandler(
+    (thread, throwable) -> {
+        System.err.println("Uncaught exception in thread: " + thread.getName());
+        System.err.println("Exception: " + throwable.getMessage());
+        throwable.printStackTrace();
+        
+        // Log to file, send alert, etc.
+    }
+);
+
+// Set handler for specific thread
+thread.setUncaughtExceptionHandler(
+    (t, e) -> {
+        System.err.println("Thread " + t.getName() + " threw: " + e);
+    }
+);
+```
+
+**Best Practices:**
+
+```java
+public class ProperExceptionHandling {
+    public static void main(String[] args) {
+        // Always catch exceptions in main
+        try {
+            runApplication();
+        } catch (Exception e) {
+            System.err.println("Application error: " + e.getMessage());
+            e.printStackTrace();
+            // Log error, cleanup, exit gracefully
+            System.exit(1);
+        }
+    }
+    
+    static void runApplication() {
+        // Application logic
+    }
+}
+```
+
+---
+
+### 35. Rethrowing Exceptions
+
+**Mục đích:** Catch exception, xử lý một phần, rồi throw lại.
+
+**Cách 1: Rethrow Exception Gốc**
+
+```java
+public void processData() throws IOException {
+    try {
+        readFile();
+    } catch (IOException e) {
+        // Log error
+        System.err.println("Error reading file: " + e.getMessage());
+        logger.error("File read failed", e);
+        
+        // Rethrow để caller xử lý
+        throw e;
+    }
+}
+```
+
+**Cách 2: Wrap trong Exception Mới**
+
+```java
+public void processOrder(Order order) throws OrderProcessingException {
+    try {
+        validateOrder(order);
+        chargePayment(order);
+        shipOrder(order);
+        
+    } catch (ValidationException e) {
+        // Wrap và add context
+        throw new OrderProcessingException(
+            "Order validation failed for order: " + order.getId(), 
+            e
+        );
+        
+    } catch (PaymentException e) {
+        throw new OrderProcessingException(
+            "Payment failed for order: " + order.getId(), 
+            e
+        );
+        
+    } catch (ShippingException e) {
+        throw new OrderProcessingException(
+            "Shipping failed for order: " + order.getId(), 
+            e
+        );
+    }
+}
+
+// Caller có thể lấy original exception
+try {
+    processOrder(order);
+} catch (OrderProcessingException e) {
+    System.out.println("Error: " + e.getMessage());
+    Throwable cause = e.getCause();
+    System.out.println("Caused by: " + cause.getClass().getName());
+}
+```
+
+**Cách 3: Partial Handling + Rethrow**
+
+```java
+public void executeTransaction() throws SQLException {
+    Connection conn = null;
+    try {
+        conn = getConnection();
+        conn.setAutoCommit(false);
+        
+        // Perform operations
+        updateDatabase(conn);
+        
+        conn.commit();
+        
+    } catch (SQLException e) {
+        // Partial handling: rollback
+        if (conn != null) {
+            try {
+                conn.rollback();
+                System.out.println("Transaction rolled back");
+            } catch (SQLException rollbackEx) {
+                e.addSuppressed(rollbackEx);
+            }
+        }
+        
+        // Rethrow để caller biết có lỗi
+        throw e;
+        
+    } finally {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                // Log close error
+            }
+        }
+    }
+}
+```
+
+**Cách 4: Exception Translation**
+
+```java
+// DAO Layer
+class UserDao {
+    public User findUser(int id) throws SQLException {
+        // Database access
+        return user;
+    }
+}
+
+// Service Layer - translate exception
+class UserService {
+    private UserDao dao = new UserDao();
+    
+    public User getUser(int id) throws UserNotFoundException {
+        try {
+            return dao.findUser(id);
+        } catch (SQLException e) {
+            // Translate SQLException to business exception
+            throw new UserNotFoundException(
+                "User not found: " + id, 
+                e
+            );
+        }
+    }
+}
+
+// Controller Layer
+class UserController {
+    private UserService service = new UserService();
+    
+    public void handleRequest(int userId) {
+        try {
+            User user = service.getUser(userId);
+            // Process user
+        } catch (UserNotFoundException e) {
+            // Business exception - user-friendly error
+            System.out.println("User not found");
+        }
+    }
+}
+```
+
+**Multi-catch với Rethrow (Java 7+):**
+
+```java
+public void process() throws IOException, SQLException {
+    try {
+        performOperations();
+    } catch (IOException | SQLException e) {
+        // Log common handling
+        System.err.println("Operation failed: " + e.getMessage());
+        
+        // Rethrow specific type
+        throw e;
+    }
+}
+```
+
+---
+
+## Multithreading
+
+### 36. Thread và Lifecycle
+
+**Thread:** Đơn vị nhỏ nhất của execution trong một process.
+
+**Thread States (Lifecycle):**
+
+```
+        new Thread()
+              ↓
+    ┌─────────────────┐
+    │      NEW        │
+    └─────────────────┘
+              ↓ start()
+    ┌─────────────────┐
+    │   RUNNABLE      │←──────┐
+    └─────────────────┘       │
+              ↓               │
+    ┌─────────────────┐       │
+    │    RUNNING      │       │
+    └─────────────────┘       │
+         ↓    ↓    ↓          │
+    ┌────┴────┴────┴──────┐   │
+    ↓         ↓           ↓   │
+BLOCKED  WAITING  TIMED_WAITING│
+    ↓         ↓           ↓   │
+    └─────────┴───────────┴───┘
+              ↓
+    ┌─────────────────┐
+    │  TERMINATED     │
+    └─────────────────┘
+```
+
+**Chi tiết các states:**
+
+#### 1. NEW
+```java
+Thread thread = new Thread(() -> {
+    System.out.println("Running");
+});
+// State: NEW - chưa start
+System.out.println(thread.getState()); // NEW
+```
+
+#### 2. RUNNABLE
+```java
+thread.start(); // Chuyển sang RUNNABLE
+// Thread sẵn sàng chạy, đợi CPU scheduler
+System.out.println(thread.getState()); // RUNNABLE
+```
+
+#### 3. RUNNING
+```java
+// Khi CPU scheduler pick thread
+// Thread đang thực thi code
+// Không có method để check RUNNING state riêng
+// (Được coi là part of RUNNABLE trong Java)
+```
+
+#### 4. BLOCKED
+```java
+class Counter {
+    private int count = 0;
+    
+    public synchronized void increment() {
+        count++;
+    }
+}
+
+Counter counter = new Counter();
+
+Thread t1 = new Thread(() -> {
+    counter.increment(); // Has lock
+});
+
+Thread t2 = new Thread(() -> {
+    counter.increment(); // BLOCKED, waiting for lock
+});
+
+t1.start();
+t2.start();
+Thread.sleep(10);
+System.out.println(t2.getState()); // BLOCKED
+```
+
+#### 5. WAITING
+```java
+Object lock = new Object();
+
+Thread t1 = new Thread(() -> {
+    synchronized (lock) {
+        try {
+            lock.wait(); // WAITING state
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+});
+
+t1.start();
+Thread.sleep(100);
+System.out.println(t1.getState()); // WAITING
+
+// Other ways to enter WAITING:
+// - thread.join() - wait for another thread
+// - LockSupport.park()
+```
+
+#### 6. TIMED_WAITING
+```java
+Thread t = new Thread(() -> {
+    try {
+        Thread.sleep(5000); // TIMED_WAITING for 5 seconds
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+});
+
+t.start();
+Thread.sleep(100);
+System.out.println(t.getState()); // TIMED_WAITING
+
+// Other ways:
+// - wait(timeout)
+// - join(timeout)
+// - LockSupport.parkNanos()
+```
+
+#### 7. TERMINATED
+```java
+Thread t = new Thread(() -> {
+    System.out.println("Task completed");
+});
+
+t.start();
+t.join(); // Wait for completion
+System.out.println(t.getState()); // TERMINATED
+```
+
+**Complete Example:**
+
+```java
+public class ThreadLifecycleDemo {
+    public static void main(String[] args) throws InterruptedException {
+        Object lock = new Object();
+        
+        Thread thread = new Thread(() -> {
+            System.out.println("Thread started");
+            
+            synchronized (lock) {
+                try {
+                    // WAITING
+                    lock.wait(2000); // TIMED_WAITING for 2 seconds
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            System.out.println("Thread ending");
+        });
+        
+        System.out.println("State: " + thread.getState()); // NEW
+        
+        thread.start();
+        Thread.sleep(100);
+        System.out.println("State: " + thread.getState()); // TIMED_WAITING
+        
+        thread.join();
+        System.out.println("State: " + thread.getState()); // TERMINATED
+    }
+}
+```
+
+---
+
+### 37. Process vs Thread
+
+| **Process** | **Thread** |
+|------------|-----------|
+| Chương trình đang chạy | Đơn vị execution trong process |
+| Có memory space riêng | Chia sẻ memory space |
+| Independent | Dependent on process |
+| Nặng (heavyweight) | Nhẹ (lightweight) |
+| Tạo/switch chậm và tốn kém | Tạo/switch nhanh |
+| IPC phức tạp | Communication dễ (shared memory) |
+| Crash không ảnh hưởng processes khác | Crash có thể crash toàn process |
+| OS resource allocation | JVM resource allocation |
+
+**Visualization:**
+
+```
+Operating System
+├── Process 1 (Chrome)
+│   ├── Thread 1: UI Rendering
+│   ├── Thread 2: JavaScript Execution
+│   ├── Thread 3: Network Requests
+│   └── Memory: [Heap, Stack per thread]
+│
+├── Process 2 (IntelliJ)
+│   ├── Thread 1: UI
+│   ├── Thread 2: Code Analysis
+│   └── Thread 3: Compilation
+│
+└── Process 3 (Java App)
+    ├── Thread 1: main
+    ├── Thread 2: Worker-1
+    └── Thread 3: Worker-2
+```
+
+**Code Example:**
+
+```java
+// Single Process, Multiple Threads
+public class ProcessVsThread {
+    public static void main(String[] args) {
+        System.out.println("Main thread: " + Thread.currentThread().getName());
+        
+        // Create multiple threads in same process
+        Thread t1 = new Thread(() -> {
+            System.out.println("Thread 1: " + Thread.currentThread().getName());
+        });
+        
+        Thread t2 = new Thread(() -> {
+            System.out.println("Thread 2: " + Thread.currentThread().getName());
+        });
+        
+        t1.start();
+        t2.start();
+        
+        // All threads share same memory space
+        // Can access same variables (with synchronization)
+    }
+}
+```
+
+**Memory Sharing:**
+
+```java
+class SharedData {
+    static int sharedVariable = 0; // Shared between threads
+    
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                sharedVariable++; // Access shared variable
+            }
+        });
+        
+        Thread t2 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                sharedVariable++; // Access same variable
+            }
+        });
+        
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        
+        System.out.println("Shared variable: " + sharedVariable);
+        // May not be 2000 due to race condition!
+    }
+}
+```
+
+---
+
+### 38. Thread Priorities
+
+**Định nghĩa:** Số từ 1-10 cho biết độ ưu tiên với thread scheduler.
+
+**Constants:**
+
+```java
+Thread.MIN_PRIORITY = 1
+Thread.NORM_PRIORITY = 5 (default)
+Thread.MAX_PRIORITY = 10
+```
+
+**Example:**
+
+```java
+public class ThreadPriorityDemo {
+    public static void main(String[] args) {
+        Thread lowPriority = new Thread(() -> {
+            for (int i = 0; i < 5; i++) {
+                System.out.println("Low priority: " + i);
+            }
+        });
+        
+        Thread normalPriority = new Thread(() -> {
+            for (int i = 0; i < 5; i++) {
+                System.out.println("Normal priority: " + i);
+            }
+        });
+        
+        Thread highPriority = new Thread(() -> {
+            for (int i = 0; i < 5; i++) {
+                System.out.println("High priority: " + i);
+            }
+        });
+        
+        // Set priorities
+        lowPriority.setPriority(Thread.MIN_PRIORITY);     // 1
+        normalPriority.setPriority(Thread.NORM_PRIORITY); // 5
+        highPriority.setPriority(Thread.MAX_PRIORITY);    // 10
+        
+        // Start threads
+        lowPriority.start();
+        normalPriority.start();
+        highPriority.start();
+        
+        // Get priority
+        System.out.println("Low: " + lowPriority.getPriority());
+        System.out.println("Normal: " + normalPriority.getPriority());
+        System.out.println("High: " + highPriority.getPriority());
+    }
+}
+```
+
+**⚠️ Important Notes:**
+
+1. **Platform-dependent:** Behavior varies by OS
+2. **Not guaranteed:** Priority là hint, không phải guarantee
+3. **Avoid relying on it:** Đừng dùng priority cho program logic
+
+```java
+// ❌ BAD: Dựa vào priority
+Thread critical = new Thread(criticalTask);
+critical.setPriority(Thread.MAX_PRIORITY);
+// Không guarantee sẽ chạy trước!
+
+// ✅ GOOD: Dùng synchronization
+synchronized(lock) {
+    // Explicit coordination
+}
+```
+
+**Thread Inheritance:**
+
+```java
+public class PriorityInheritance {
+    public static void main(String[] args) {
+        // Main thread priority
+        System.out.println("Main priority: " + 
+            Thread.currentThread().getPriority()); // 5
+        
+        // Child inherits parent's priority
+        Thread child = new Thread(() -> {
+            System.out.println("Child priority: " + 
+                Thread.currentThread().getPriority()); // 5
+        });
+        child.start();
+    }
+}
+```
+
+---
+
+### 39. Context Switching
+
+**Định nghĩa:** Process mà CPU chuyển từ executing một thread sang thread khác.
+
+**Cách hoạt động:**
+
+```
+Time: 0ms  →  Thread A executing
+          Save state of A (registers, PC, stack pointer)
+Time: 10ms →  Context Switch
+          Load state of B
+Time: 10ms →  Thread B executing
+          Save state of B
+Time: 20ms →  Context Switch
+          Load state of A
+Time: 20ms →  Thread A executing
+```
+
+**Steps:**
+
+1. **Save current thread state:**
+   - Program Counter (PC)
+   - Registers
+   - Stack pointer
+   - Thread-local data
+
+2. **Select next thread** (by scheduler)
+
+3. **Load new thread state**
+
+4. **Resume execution**
+
+**Khi nào xảy ra:
