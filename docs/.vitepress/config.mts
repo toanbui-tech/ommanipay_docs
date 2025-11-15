@@ -22,6 +22,7 @@ export default withMermaid(
         collapseDepth: 2,
         useTitleFromFileHeading: true,
         manualSortFileNameByPriority: [
+          'java-question.md',
           'process.md',
         ],
         useFolderTitleFromIndexFile: true,
